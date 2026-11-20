@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meu Frete</title>
+<meta name="theme-color" content="#62AF00">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="img/icone-192.png">
+<link rel="apple-touch-icon" href="img/icone-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+html,body{margin:0;background:#EEF1EA}
+a{color:#4A7215}a:hover{color:#2F4A0D}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:3px solid #4A7215;outline-offset:2px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<template id="tpl">
+<div style="width: 100%; max-width: 480px; margin: 0 auto; height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; background: #EEF1EA; color: #2B2F27; font-family: Nunito, system-ui, sans-serif; overflow: hidden">
+
+  <!-- topo -->
+  <sc-if value="{{temTopo}}" hint-placeholder-val="{{ true }}">
+  <div style="background: #62AF00; color: #FFFFFF; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <img src="img/simbolo.png" alt="Meu Frete" style="height: 30px; width: auto">
+      
+    </div>
+    <label for="cidade" style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>
+      <span>Perto de você:</span>
+      <select id="cidade" value="{{cidade}}" onChange="{{trocaCidade}}" style="flex-grow: 1; font: inherit; font-weight: 700; color: #2B2F27; background: #FFFFFF; border: 0; border-radius: 10px; padding: 8px 10px">
+        <option value="GPS">Minha localização (GPS)</option>
+        <option value="Rio Verde/GO">Rio Verde/GO</option>
+        <option value="Goiânia/GO">Goiânia/GO</option>
+        <option value="Patos de Minas/MG">Patos de Minas/MG</option>
+        <option value="Blumenau/SC">Blumenau/SC</option>
+      </select>
+    </label>
+  </div>
+  </sc-if>
+
+
+  <!-- conteúdo -->
+  <div style="flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+
+    <!-- ===== FRETES ===== -->
+    <sc-if value="{{telaFretes}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800">Fretes disponíveis</h1>
+          <span style="font-size: 13px; color: #5A6152">mais perto primeiro</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+          <button type="button" onClick="{{abreFiltro}}" style="border: 0; border-radius: 999px; background: #4A7215; color: #FFFFFF; font-size: 14px; font-weight: 800; padding: 9px 14px; display: flex; align-items: center; gap: 6px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"></path></svg>{{rotuloFiltro}}
+          </button>
+          <sc-for list="{{chipsFiltro}}" as="ch" hint-placeholder-count="1">
+            <span style="background: #FFFFFF; border: 1px solid #C9D1C0; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700">{{ch.t}}</span>
+          </sc-for>
+        </div>
+        <sc-if value="{{filtroAberto}}" hint-placeholder-val="{{ false }}">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+            <span style="font-size: 16px; font-weight: 800">Filtrar fretes</span>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <span style="font-size: 13px; font-weight: 700">Caminhão <span style="font-weight: 600; color: #5A6152">(já vem marcado o do seu cadastro)</span></span>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                <sc-for list="{{veics}}" as="v" hint-placeholder-count="3">
+                  <button type="button" onClick="{{v.pick}}" style="{{v.estilo}}">{{v.nome}}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+              <label for="fReg" style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700">Região
+                <select id="fReg" value="{{fReg}}" onChange="{{mudaReg}}" style="font: inherit; padding: 9px; border: 1px solid #C9D1C0; border-radius: 10px; background: #FFFFFF"><option value="">Todas</option><option value="Centro-Oeste">Centro-Oeste</option><option value="Sudeste">Sudeste</option><option value="Sul">Sul</option></select>
+              </label>
+              <label for="fUf" style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700">Estado de origem
+                <select id="fUf" value="{{fUf}}" onChange="{{mudaUf}}" style="font: inherit; padding: 9px; border: 1px solid #C9D1C0; border-radius: 10px; background: #FFFFFF"><option value="">Todos</option><option value="GO">GO</option><option value="MG">MG</option><option value="SC">SC</option><option value="SP">SP</option></select>
+              </label>
+              <label for="fOri" style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700">Origem
+                <input id="fOri" placeholder="Cidade" value="{{fOri}}" onChange="{{mudaOri}}" style="font: inherit; padding: 9px; border: 1px solid #C9D1C0; border-radius: 10px">
+              </label>
+              <label for="fDes" style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700">Destino
+                <input id="fDes" placeholder="Cidade ou UF" value="{{fDes}}" onChange="{{mudaDes}}" style="font: inherit; padding: 9px; border: 1px solid #C9D1C0; border-radius: 10px">
+              </label>
+              <label for="fPeso" style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; grid-column: 1 / -1">Peso que você leva
+                <select id="fPeso" value="{{fPeso}}" onChange="{{mudaPeso}}" style="font: inherit; padding: 9px; border: 1px solid #C9D1C0; border-radius: 10px; background: #FFFFFF"><option value="0">Qualquer peso</option><option value="15">Até 15 t</option><option value="25">Até 25 t</option><option value="30">Até 30 t</option><option value="40">Até 40 t</option></select>
+              </label>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+              <button type="button" onClick="{{limpaFiltro}}" style="border: 1px solid #62AF00; background: #FFFFFF; color: #3B5E12; border-radius: 12px; padding: 11px; font-size: 15px; font-weight: 800">Limpar</button>
+              <button type="button" onClick="{{fechaFiltro}}" style="border: 0; background: #62AF00; color: #FFFFFF; border-radius: 12px; padding: 11px; font-size: 15px; font-weight: 800">Ver {{nFretes}} fretes</button>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{temAvisoF}}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="background: #2B2F27; color: #FFFFFF; border-radius: 12px; padding: 12px; font-size: 14px; text-align: center">{{avisoF}}</div>
+        </sc-if>
+        <sc-if value="{{semFrete}}" hint-placeholder-val="{{ false }}">
+          <div style="background: #FFFFFF; border-radius: 14px; padding: 18px; font-size: 14px; color: #5A6152; text-align: center">Nenhum frete com esse filtro. Tente marcar outro caminhão ou limpar o filtro.</div>
+        </sc-if>
+        <sc-for list="{{fretes}}" as="f" hint-placeholder-count="3">
+          <div style="background: #FFFFFF; border-radius: 16px; box-shadow: 0 2px 8px rgba(43,47,39,0.08); overflow: hidden">
+            <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #2B2F27"><img src="img/pianetto.png" alt="" style="width: 32px; height: auto">{{f.transp}}</span>
+                <span style="font-size: 12px; font-weight: 800; color: #FFFFFF; background: #4A7215; border-radius: 999px; padding: 3px 9px">{{f.dist}}</span>
+              </div>
+              <div style="display: flex; gap: 10px">
+                <div style="display: flex; flex-direction: column; align-items: center; padding-top: 6px; gap: 3px" aria-hidden="true">
+                  <div style="width: 8px; height: 8px; border-radius: 50%; background: #62AF00"></div>
+                  <div style="width: 2px; height: 18px; background: #C9D1C0"></div>
+                  <div style="width: 8px; height: 8px; border-radius: 50%; border: 2px solid #62AF00; box-sizing: border-box"></div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700">
+                  <span>{{f.origem}}</span>
+                  <span>{{f.destino}}</span>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; font-size: 13px; color: #5A6152">
+                <span>📦 {{f.produto}}</span>
+                <span>⚖ {{f.peso}}</span>
+                <span>🚛 {{f.veiculo}}</span>
+                <span>📅 Coleta {{f.coleta}}</span>
+              </div>
+              <span style="font-size: 13px; color: #2B2F27">📝 {{f.obs}}</span>
+              <button type="button" onClick="{{f.abrir}}" style="align-self: flex-start; border: 0; background: transparent; padding: 0; color: #4A7215; font-size: 14px; font-weight: 800">Ver detalhes e mapa →</button>
+              <div style="display: flex; justify-content: space-between; align-items: baseline">
+                <span style="font-size: 12px; color: #5A6152">{{f.cond}}</span>
+                <span style="font-size: 20px; font-weight: 800; color: #4A7215">{{f.valor}}</span>
+              </div>
+            </div>
+            <button type="button" onClick="{{f.pedir}}" style="{{f.botaoEstilo}}">{{f.botao}}</button>
+            <sc-if value="{{f.aguardando}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 16px 14px; background: #FFF6E0">
+                <span style="font-size: 13px; color: #6B4A00; font-weight: 800">⏳ Aguardando o {{f.embNome}} confirmar o frete e o valor fechado.</span>
+                <span style="font-size: 12px; color: #6B4A00">Assim que ele confirmar, a viagem e a ordem de coleta aparecem aqui.</span>
+                <button type="button" onClick="{{f.simConfirma}}" style="align-self: flex-start; border: 0; background: transparent; color: #7A8172; font-size: 12px; padding: 2px 0">(protótipo: simular o embarcador confirmando)</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{f.negAberta}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 14px; background: #F4F9EC">
+                <span style="font-size: 13px; color: #3B5E12; font-weight: 700">Conversou com o embarcador? Conta pra gente como ficou:</span>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+                  <button type="button" onClick="{{f.fechou}}" style="border: 0; border-radius: 10px; background: #62AF00; color: #FFFFFF; padding: 10px; font-size: 14px; font-weight: 800">✔ Fechamos</button>
+                  <button type="button" onClick="{{f.naoFechou}}" style="border: 1px solid #C9D1C0; border-radius: 10px; background: #FFFFFF; color: #5A6152; padding: 10px; font-size: 14px; font-weight: 800">Não fechou</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ===== ABERTURA + ACEITE ===== -->
+    <sc-if value="{{telaSplash}}" hint-placeholder-val="{{ false }}">
+      <div style="position: relative; margin: -16px; height: 844px; background: #62AF00; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 0 24px 40px; box-sizing: border-box">
+        <svg viewBox="0 0 390 300" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 300px"><path d="M0 170 C 90 90, 200 120, 260 60 C 300 25, 350 20, 390 30 L390 300 L0 300 Z" fill="#58A000"></path><path d="M0 230 C 110 170, 220 200, 290 150 C 330 125, 365 120, 390 125 L390 300 L0 300 Z" fill="#4F9300"></path></svg>
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative"><div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><img src="img/simbolo.png" alt="" style="width: 150px; height: auto"><span style="font-size: 34px; font-weight: 800; letter-spacing: 1px; color: #FFFFFF">MEU FRETE</span></div></div>
+        <div style="position: relative; display: flex; flex-direction: column; gap: 22px">
+          <p style="margin: 0; font-size: 14px; line-height: 1.45; color: #FFFFFF">Ao tocar em Concordar, você confirma que aceita os <button type="button" onClick="{{verTermos}}" style="border: 0; background: transparent; padding: 0; font: inherit; font-weight: 800; color: #FFFFFF; text-decoration: underline">Termos de uso</button> e a <button type="button" onClick="{{verTermos}}" style="border: 0; background: transparent; padding: 0; font: inherit; font-weight: 800; color: #FFFFFF; text-decoration: underline">Política de privacidade</button> do Meu Frete, incluindo o uso da sua localização durante as viagens.</p>
+          <button type="button" onClick="{{concordar}}" style="border: 0; border-radius: 12px; background: #FFFFFF; color: #4A7215; font-size: 17px; font-weight: 800; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15)">Concordar</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== TERMOS ===== -->
+    <sc-if value="{{telaTermos}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <button type="button" onClick="{{voltarSplash}}" style="align-self: flex-start; border: 0; background: transparent; color: #4A7215; font-size: 15px; font-weight: 800; padding: 6px 0">← Voltar</button>
+        <h1 style="margin: 0; font-size: 22px; font-weight: 800">Termos de uso e privacidade</h1>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.5">
+          <sc-for list="{{termos}}" as="t" hint-placeholder-count="8">
+            <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 800">{{t.h}}</span><span style="color: #3F453A">{{t.p}}</span></div>
+          </sc-for>
+        </div>
+        <button type="button" onClick="{{concordar}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 17px; font-weight: 800; padding: 15px">Li e concordo</button>
+      </div>
+    </sc-if>
+
+    <!-- ===== ENTRAR ===== -->
+    <sc-if value="{{telaLogin}}" hint-placeholder-val="{{ false }}">
+      <div style="margin: -16px; min-height: 100dvh; display: flex; flex-direction: column; background: #EEF1EA">
+        <div style="position: relative; height: 270px; background: #62AF00; display: flex; align-items: center; justify-content: center; border-radius: 0 0 50% 50% / 0 0 22% 22%">
+          <div style="transform: scale(0.8)"><div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><img src="img/simbolo.png" alt="" style="width: 150px; height: auto"><span style="font-size: 34px; font-weight: 800; letter-spacing: 1px; color: #FFFFFF">MEU FRETE</span></div></div>
+        </div>
+        <div style="padding: 36px 32px; display: flex; flex-direction: column; gap: 16px">
+          <label for="cpf" style="display: flex; flex-direction: column; gap: 8px; font-size: 16px; font-weight: 600">CPF<input id="cpf" inputmode="numeric" placeholder="Digite seu CPF" style="font: inherit; font-size: 15px; padding: 13px 14px; border: 0; border-radius: 10px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(43,47,39,0.08)"></label>
+          <label for="senha" style="display: flex; flex-direction: column; gap: 8px; font-size: 16px; font-weight: 600">Senha<input id="senha" type="password" placeholder="Digite sua senha" style="font: inherit; font-size: 15px; padding: 13px 14px; border: 0; border-radius: 10px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(43,47,39,0.08)"></label>
+          <button type="button" onClick="{{esqueci}}" style="align-self: flex-end; border: 0; background: transparent; color: #5A6152; font-size: 14px; padding: 2px 0">Esqueceu sua senha?</button>
+          <sc-if value="{{temAvisoLogin}}" hint-placeholder-val="{{ false }}"><span role="status" style="font-size: 13px; color: #3B5E12; background: #E8F3D9; border-radius: 10px; padding: 10px">{{avisoLogin}}</span></sc-if>
+          <button type="button" onClick="{{entrar}}" style="margin-top: 14px; border: 0; border-radius: 12px; background: #62AF00; color: #FFFFFF; font-size: 17px; font-weight: 800; padding: 15px; box-shadow: 0 4px 10px rgba(98,175,0,0.3)">Entrar</button>
+          <span style="text-align: center; font-size: 15px; color: #5A6152">Não possui uma conta? <button type="button" onClick="{{cadastrese}}" style="border: 0; background: transparent; padding: 0; font: inherit; font-weight: 800; color: #62AF00">Cadastre-se</button></span>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== DETALHE DO FRETE ===== -->
+    <sc-if value="{{telaFrete}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <button type="button" onClick="{{irFretes}}" style="align-self: flex-start; border: 0; background: transparent; color: #4A7215; font-size: 15px; font-weight: 800; padding: 6px 0">← Voltar</button>
+        <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+          <div role="img" aria-label="Mapa da rota {{fd.origem}} até {{fd.destino}}" style="position: relative; height: 190px; background: #E6EDE0">
+            <svg viewBox="0 0 360 190" width="100%" height="190" aria-hidden="true" style="display: block">
+              <path d="M0 40 H360 M0 95 H360 M0 150 H360 M70 0 V190 M180 0 V190 M290 0 V190" stroke="#D6DFCE" stroke-width="1"></path>
+              <path d="{{fd.rotaPath}}" fill="none" stroke="#62AF00" stroke-width="4" stroke-dasharray="8 6" stroke-linecap="round"></path>
+              <circle cx="{{fd.ox}}" cy="{{fd.oy}}" r="9" fill="#62AF00" stroke="#FFFFFF" stroke-width="3"></circle>
+              <circle cx="{{fd.dx}}" cy="{{fd.dy}}" r="9" fill="#FFFFFF" stroke="#4A7215" stroke-width="4"></circle>
+            </svg>
+            <a href="{{fd.mapsLink}}" target="_blank" rel="noopener" style="position: absolute; right: 10px; bottom: 10px; background: #FFFFFF; color: #3B5E12; font-size: 13px; font-weight: 800; text-decoration: none; border-radius: 999px; padding: 7px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.15)">Abrir no Google Maps</a>
+          </div>
+          <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800"><img src="img/pianetto.png" alt="" style="width: 32px; height: auto">Transportadora Pianetto</span>
+              <span style="font-size: 14px; font-weight: 800; color: #4A7215">{{fd.produto}}</span>
+            </div>
+            <div style="display: flex; gap: 12px">
+              <div style="display: flex; flex-direction: column; align-items: center; padding-top: 5px; gap: 3px" aria-hidden="true"><div style="width: 10px; height: 10px; border-radius: 50%; background: #62AF00"></div><div style="width: 2px; flex-grow: 1; background: #C9D1C0"></div><div style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #4A7215; box-sizing: border-box"></div></div>
+              <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px">
+                <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 800; font-size: 15px">{{fd.origem}}</span><span style="color: #5A6152">Coleta {{fd.coleta}}. Endereço completo e referência da carga chegam depois que o frete fechar.</span></span>
+                <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 800; font-size: 15px">{{fd.destino}}</span><span style="color: #5A6152">{{fd.cond}}</span></span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; font-size: 13px">
+              <span style="display: flex; flex-direction: column; gap: 2px"><span style="color: #5A6152">Peso</span><span style="font-weight: 800; font-size: 15px">{{fd.peso}}</span></span>
+              <span style="display: flex; flex-direction: column; gap: 2px"><span style="color: #5A6152">Veículo</span><span style="font-weight: 800; font-size: 15px">{{fd.veiculo}}</span></span>
+              <span style="display: flex; flex-direction: column; gap: 2px"><span style="color: #5A6152">Distância da rota</span><span style="font-weight: 800; font-size: 15px">{{fd.kmRota}}</span></span>
+              <span style="display: flex; flex-direction: column; gap: 2px"><span style="color: #5A6152">Até a coleta</span><span style="font-weight: 800; font-size: 15px">{{fd.dist}}</span></span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 14px; font-weight: 800">Observações</span><span style="font-size: 14px; color: #3F453A; line-height: 1.45">{{fd.obs}}</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #EEF1EA; padding-top: 12px"><span style="font-size: 13px; color: #5A6152">Valor do frete</span><span style="font-size: 24px; font-weight: 800; color: #4A7215">{{fd.valor}}</span></div>
+          </div>
+          <button type="button" onClick="{{fd.pedir}}" style="{{fd.botaoEstilo}}">{{fd.botao}}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== MINHA VIAGEM ===== -->
+    <sc-if value="{{telaViagem}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 800">Minha viagem</h1>
+        <sc-if value="{{espiando}}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="background: #1F4E8C; color: #FFFFFF; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 800">👁 Vendo como {{espNome}}</span><span style="font-size: 13px">{{espFotos}}</span><button type="button" onClick="{{sairEspelho}}" style="align-self: flex-start; border: 0; border-radius: 10px; background: #FFFFFF; color: #1F4E8C; font-size: 14px; font-weight: 800; padding: 8px 12px">Voltar pra minha conta</button></div>
+        </sc-if>
+        <sc-if value="{{semViagem}}" hint-placeholder-val="{{ false }}">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08); align-items: center; text-align: center"><span style="font-size: 16px; font-weight: 800">Nenhuma viagem em andamento</span><span style="font-size: 14px; color: #5A6152">Negocie um frete na aba Fretes. Quando fechar, a viagem aparece aqui.</span></div>
+        </sc-if>
+        <sc-if value="{{temViagem}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 14px">
+            <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08); gap: 6px">
+              <span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #2B2F27"><img src="img/pianetto.png" alt="" style="width: 28px; height: auto">Transportadora Pianetto</span>
+              <span style="font-size: 17px; font-weight: 800">{{via.origem}} → {{via.destino}}</span>
+              <span style="font-size: 13px; color: #5A6152">{{via.produto}} · {{via.peso}} · {{via.veiculo}}</span>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+              <sc-for list="{{etapas}}" as="e" hint-placeholder-count="8">
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 14px"><span style="{{e.bola}}" aria-hidden="true"></span><span style="{{e.txt}}">{{e.nome}}</span></div>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{gpsNegado}}" hint-placeholder-val="{{ false }}">
+              <div role="status" style="background: #FDECEC; color: #8A1F1F; border-radius: 14px; padding: 12px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 800">📍 Ative a localização do app</span><span>A torre de monitoramento precisa da sua localização durante a viagem. Libere a localização pro app nas configurações do celular e deixe o app aberto.</span></div>
+            </sc-if>
+            <!-- 0. ordem de carregamento (antes de carregar) -->
+            <sc-if value="{{pNotas}}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+                <span style="font-size: 16px; font-weight: 800">1º Ordem de carregamento</span>
+                <span style="font-size: 13px; color: #5A6152">Mostre na portaria pra carregar. As notas fiscais vêm depois que carregar.</span>
+                <sc-if value="{{temOrdemDoc}}" hint-placeholder-val="{{ true }}">
+                  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+                    <button type="button" onClick="{{abrirOrdem}}" style="border: 0; background: #62AF00; color: #FFFFFF; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800">Ver ordem</button>
+                    <button type="button" onClick="{{zapOrdem}}" style="border: 0; background: #25A244; color: #FFFFFF; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800">Enviar no WhatsApp</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{semOrdemDoc}}" hint-placeholder-val="{{ false }}">
+                  <span role="status" style="background: #FFF1D6; color: #8A5A00; border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 700">A ordem chega aqui assim que o time liberar. Se você já está na portaria sem ela, toque em Falar com o rastreio.</span>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- 1. fotos das notas -->
+            <sc-if value="{{pNotas}}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+                <span style="font-size: 16px; font-weight: 800">2º Depois de carregar: fotos das notas</span>
+                <span style="font-size: 13px; color: #5A6152">Tire foto de todas as notas que te entregaram (pode ser 1, 10, 20…). Vão direto pro time do manifesto.</span>
+                <label for="fNotas" style="display: block; text-align: center; border: 2px dashed #62AF00; border-radius: 14px; background: #F4F9EC; color: #3B5E12; font-size: 15px; font-weight: 800; padding: 16px; cursor: pointer">📷 Tirar ou escolher fotos<input id="fNotas" type="file" accept="image/*,application/pdf" multiple onChange="{{addNotas}}" style="display: none"></label>
+                <span style="font-size: 14px; font-weight: 800; color: #3B5E12">{{txtNotas}}</span>
+                <button type="button" onClick="{{enviaNotas}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 16px; font-weight: 800; padding: 14px">Enviar pro manifesto</button>
+              </div>
+            </sc-if>
+
+            <!-- 2. documentos + iniciar viagem -->
+            <sc-if value="{{pDocs}}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)"><span style="font-size: 14px; color: #3B5E12; font-weight: 800">✔ Manifesto pronto. Seus documentos chegaram.</span><button type="button" onClick="{{iniciar}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 16px; font-weight: 800; padding: 14px">▶ Iniciar viagem</button></div>
+            </sc-if>
+
+            <!-- 3. em viagem -->
+            <sc-if value="{{pViagem}}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)"><span style="font-size: 14px; color: #5A6152">Boa viagem! O rastreio está ligado. Chegando no cliente, toque abaixo.</span><button type="button" onClick="{{chegou}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 16px; font-weight: 800; padding: 14px">📍 Cheguei na descarga</button></div>
+            </sc-if>
+
+            <!-- 4. descarga paga -->
+            <sc-if value="{{pDescarga}}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+                <span style="font-size: 16px; font-weight: 800">Tem descarga a ser paga?</span>
+                <span style="font-size: 13px; color: #5A6152">Ainda não pague. Primeiro mande a foto aqui pra gente conferir.</span>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+                  <button type="button" onClick="{{descSim}}" style="{{estDescSim}}">Sim, tem</button>
+                  <button type="button" onClick="{{descNao}}" style="border: 2px solid #62AF00; border-radius: 12px; background: #FFFFFF; color: #3B5E12; padding: 12px; font-size: 15px; font-weight: 800">Não tem</button>
+                </div>
+                <sc-if value="{{pagouDesc}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-direction: column; gap: 10px">
+                    
+                    <label for="fDesc" style="display: block; text-align: center; border: 2px dashed #62AF00; border-radius: 14px; background: #F4F9EC; color: #3B5E12; font-size: 15px; font-weight: 800; padding: 16px; cursor: pointer">📷 Foto do recibo / boleto da descarga<input id="fDesc" type="file" accept="image/*,application/pdf" onChange="{{addDesc}}" style="display: none"></label>
+                    <span style="font-size: 13px; color: #5A6152">Junto com o recibo, tire foto do seu documento do lado.</span>
+                    <button type="button" onClick="{{conferirDesc}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 16px; font-weight: 800; padding: 14px">Enviar pra conferência</button>
+                    <button type="button" onClick="{{simForaDesc}}" style="border: 0; background: transparent; color: #7A8172; font-size: 12px; padding: 4px">(protótipo: simular recibo fora do padrão)</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{descFora}}" hint-placeholder-val="{{ false }}">
+                  <div role="status" style="background: #FDECEC; border-radius: 12px; padding: 12px; font-size: 14px; color: #8A1F1F; display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 800">⚠ Comprovante fora do padrão. Não pague ainda.</span><span>• Falta assinatura de quem recebeu</span><span>• Falta carimbo da empresa</span><span>• Tire a foto com seu documento do lado</span><span style="font-weight: 700">Mande uma foto nova corrigida.</span></div>
+                </sc-if>
+                <sc-if value="{{descOk}}" hint-placeholder-val="{{ false }}">
+                  <div role="status" style="background: #E8F3D9; border-radius: 12px; padding: 12px; font-size: 14px; color: #2F4A0D; display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 800">✔ Comprovante OK, dentro do padrão</span><span>Pode pagar a descarga e seguir com a entrega.</span><span>Já pedimos o reembolso pro financeiro. O valor volta pra você:</span><span style="font-weight: 800">Previsão de reembolso: {{previsao}}</span><span style="font-size: 12px">Pedidos até 10h são reembolsados até 12h. Depois das 10h, às 17h. Depois das 17h, no dia seguinte até 12h.</span></div>
+                  <button type="button" onClick="{{irEntrega}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 16px; font-weight: 800; padding: 14px">Continuar</button>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- 5. comprovante de entrega -->
+            <sc-if value="{{pEntrega}}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+                <span style="font-size: 16px; font-weight: 800">Comprovante de entrega</span>
+                <span style="font-size: 13px; color: #5A6152">Canhoto da nota assinado ou CT-e assinado, com data e carimbo.</span>
+                <label for="fEnt" style="display: block; text-align: center; border: 2px dashed #62AF00; border-radius: 14px; background: #F4F9EC; color: #3B5E12; font-size: 15px; font-weight: 800; padding: 16px; cursor: pointer">📷 Foto do canhoto / CT-e assinado<input id="fEnt" type="file" accept="image/*,application/pdf" multiple onChange="{{addEnt}}" style="display: none"></label>
+                <span style="font-size: 14px; font-weight: 800; color: #3B5E12">{{txtEnt}}</span>
+                <button type="button" onClick="{{conferirEnt}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 16px; font-weight: 800; padding: 14px">Enviar pra conferência</button>
+              </div>
+            </sc-if>
+
+            <!-- 6. avaliar -->
+            <sc-if value="{{pAvaliar}}" hint-placeholder-val="{{ false }}">
+              <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+                <span role="status" style="background: #E8F3D9; border-radius: 12px; padding: 12px; font-size: 14px; color: #2F4A0D; font-weight: 800">✔ Comprovante conferido. Viagem finalizada!</span>
+                <span style="font-size: 16px; font-weight: 800">Como foi trabalhar com a Transportadora Pianetto?</span>
+                <div style="display: flex; gap: 6px; justify-content: center">
+                  <sc-for list="{{estrelas}}" as="st" hint-placeholder-count="5">
+                    <button type="button" onClick="{{st.pick}}" aria-label="{{st.rotulo}}" style="{{st.estilo}}">★</button>
+                  </sc-for>
+                </div>
+                <label for="cAval" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700">O que podemos melhorar? (opcional)<textarea id="cAval" rows="3" style="font: inherit; padding: 10px; border: 1px solid #C9D1C0; border-radius: 12px"></textarea></label>
+                <button type="button" onClick="{{enviarAval}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 16px; font-weight: 800; padding: 14px">Enviar avaliação</button>
+              </div>
+            </sc-if>
+
+            <!-- 16/11/2026 (Jesimiel): rastreio no app -->
+            <sc-if value="{{temAtend}}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{abrirChat}}" style="border: 0; border-radius: 14px; background: #1F4E8C; color: #FFFFFF; padding: 14px; font-size: 15px; font-weight: 800; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 8px"><span>💬 Atendimento com o rastreio · {{atendMotivo}}</span><span>Abrir →</span></button>
+            </sc-if>
+            <sc-if value="{{semAtend}}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{irSuporte}}" style="border: 2px solid #1F4E8C; border-radius: 14px; background: #FFFFFF; color: #1F4E8C; padding: 12px 14px; text-align: left; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 800">🆘 Falar com o rastreio</span><span style="font-size: 12px; color: #5A6152">Avaria, devolução, desvio, atraso, problema na descarga ou no caminhão</span></button>
+            </sc-if>
+
+            <sc-if value="{{pDocsLista}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <h2 style="margin: 4px 0 0; font-size: 17px; font-weight: 800">Documentos da viagem</h2>
+                <sc-for list="{{docs}}" as="d" hint-placeholder-count="5">
+                  <div style="background: #FFFFFF; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 8px rgba(43,47,39,0.06)">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+                      <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 800">{{d.nome}}</span><span style="font-size: 12px; color: #5A6152">{{d.info}}</span></span>
+                      <sc-if value="{{d.temVer}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{verOrdem}}" style="border: 0; background: transparent; color: #4A7215; font-size: 14px; font-weight: 800; padding: 6px">Ver</button></sc-if>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+                      <button type="button" onClick="{{d.baixar}}" style="border: 1px solid #62AF00; background: #FFFFFF; color: #3B5E12; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 800">⬇ Baixar</button>
+                      <button type="button" onClick="{{d.zap}}" style="border: 0; background: #25A244; color: #FFFFFF; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 800">Enviar no WhatsApp</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{temAviso}}" hint-placeholder-val="{{ false }}">
+              <div role="status" style="background: #2B2F27; color: #FFFFFF; border-radius: 12px; padding: 12px; font-size: 14px; text-align: center">{{aviso}}</div>
+            </sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{avaliou}}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="background: #E8F3D9; border-radius: 14px; padding: 14px; font-size: 14px; color: #2F4A0D; font-weight: 700; text-align: center">Obrigado pela avaliação! Você já pode negociar o próximo frete.</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ===== PERFIL ===== -->
+    <sc-if value="{{telaPerfil}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: #FFFFFF; border-radius: 12px; padding: 4px; gap: 4px">
+          <button type="button" onClick="{{contaMot}}" style="{{estContaMot}}">Motorista</button>
+          <button type="button" onClick="{{contaFrota}}" style="{{estContaFrota}}">Dono de frota</button>
+        </div>
+        <sc-if value="{{modoFrota}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 14px">
+            <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+              <span style="font-size: 16px; font-weight: 800">Minha frota · Transportes Exemplo</span>
+              <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center">
+                <span style="background: #F4F9EC; border-radius: 10px; padding: 10px 4px; display: flex; flex-direction: column"><span style="font-size: 20px; font-weight: 800; color: #4A7215">{{frotaTot.viagens}}</span><span style="font-size: 11px; color: #5A6152">viagens no mês</span></span>
+                <span style="background: #F4F9EC; border-radius: 10px; padding: 10px 4px; display: flex; flex-direction: column"><span style="font-size: 16px; font-weight: 800; color: #4A7215">{{frotaTot.total}}</span><span style="font-size: 11px; color: #5A6152">em fretes no mês</span></span>
+                <span style="background: #F4F9EC; border-radius: 10px; padding: 10px 4px; display: flex; flex-direction: column"><span style="font-size: 20px; font-weight: 800; color: #4A7215">{{frotaTot.caminhoes}}</span><span style="font-size: 11px; color: #5A6152">caminhões</span></span>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+              <span style="font-size: 16px; font-weight: 800">Motoristas e caminhões</span>
+              <span style="font-size: 12px; color: #5A6152">Troque o caminhão de qualquer motorista a hora que quiser.</span>
+              <sc-for list="{{frotaMot}}" as="m" hint-placeholder-count="3">
+                <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 0; border-top: 1px solid #EEF1EA">
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <span style="width: 38px; height: 38px; border-radius: 50%; background: #DDE3D5; color: #4A7215; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0" aria-hidden="true">{{m.ini}}</span>
+                    <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 15px; font-weight: 800">{{m.nome}}</span><span style="font-size: 12px; color: #5A6152">{{m.status}}</span></span>
+                    <span style="font-size: 12px; font-weight: 800; color: #4A7215; text-align: right">{{m.viagens}} viagens<br>{{m.total}}</span>
+                  </div>
+                  <label for="{{m.selId}}" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5A6152">Caminhão
+                    <select id="{{m.selId}}" value="{{m.placa}}" onChange="{{m.troca}}" style="font: inherit; font-size: 13px; padding: 7px; border: 1px solid #C9D1C0; border-radius: 8px; background: #FFFFFF; flex-grow: 1"><option value="">Sem caminhão</option><option value="ABC1D23">ABC1D23 · Carreta sider</option><option value="QWE4R56">QWE4R56 · Carreta baú</option><option value="TRK7U89">TRK7U89 · Truck</option></select>
+                  </label>
+                </div>
+              </sc-for>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+                <button type="button" onClick="{{addMot}}" style="border: 1px solid #62AF00; background: #FFFFFF; color: #3B5E12; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 800">+ Motorista</button>
+                <button type="button" onClick="{{addCam}}" style="border: 1px solid #62AF00; background: #FFFFFF; color: #3B5E12; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 800">+ Caminhão</button>
+              </div>
+              <sc-if value="{{temAvisoFrota}}" hint-placeholder-val="{{ false }}"><span role="status" style="font-size: 13px; color: #3B5E12; background: #E8F3D9; border-radius: 10px; padding: 10px">{{avisoFrota}}</span></sc-if>
+            </div>
+          </div>
+        </sc-if>
+        <div style="display: flex; align-items: center; gap: 14px">
+          <label for="fFoto" style="width: 72px; height: 72px; border-radius: 50%; background: #DDE3D5; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; color: #4A7215; cursor: pointer; flex-shrink: 0" aria-label="Trocar foto de perfil">{{iniciais}}<input id="fFoto" type="file" accept="image/*" style="display: none"></label>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 19px; font-weight: 800">{{meuNome}}</span><span style="font-size: 13px; color: #5A6152">Toque na foto pra trocar</span><span style="font-size: 13px; font-weight: 800; color: #4A7215">{{nViagensTxt}}</span></div>
+        </div>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+          <span style="font-size: 16px; font-weight: 800">Cadastro nas transportadoras</span>
+          <sc-for list="{{cadastros}}" as="cd" hint-placeholder-count="1">
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 10px"><img src="img/pianetto.png" alt="" style="width: 30px; height: auto"><span style="flex-grow: 1; font-size: 15px; font-weight: 800">{{cd.nome}}</span><span style="{{cd.selo}}">{{cd.status}}</span></div>
+              <span style="font-size: 13px; color: #5A6152">{{cd.detalhe}}</span>
+              <sc-if value="{{cd.podePedir}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{cd.pedir}}" style="border: 0; border-radius: 12px; background: #62AF00; color: #FFFFFF; font-size: 15px; font-weight: 800; padding: 12px">Pedir nova análise</button></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{temCaminhao}}" hint-placeholder-val="{{ false }}">
+        <div style="background: #fff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06)">
+          <span style="font-size: 16px; font-weight: 800">Caminhão</span>
+          <span style="display: flex; justify-content: space-between; gap: 8px; font-size: 14px"><span style="color: #5A6152">Placa</span><span style="font-weight: 700">{{camPlaca}}</span></span>
+          <span style="display: flex; justify-content: space-between; gap: 8px; font-size: 14px"><span style="color: #5A6152">Tipo</span><span style="font-weight: 700">{{camTipo}}</span></span>
+          <span style="font-size: 12px; color: #5A6152">Da sua última viagem com a gente. Trocou de caminhão? Avise no chat do rastreio.</span>
+        </div>
+        </sc-if>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+          <span style="font-size: 16px; font-weight: 800">Histórico de viagens</span>
+          <sc-if value="{{semHist}}" hint-placeholder-val="{{ false }}"><span style="font-size: 14px; color: #5A6152">Suas viagens com a gente vão aparecer aqui.</span></sc-if>
+          <sc-for list="{{historico}}" as="h" hint-placeholder-count="4">
+            <div style="display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid #EEF1EA">
+              <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 14px; font-weight: 800">{{h.rota}}</span><span style="font-size: 12px; color: #5A6152">{{h.data}} · {{h.prod}}</span></span>
+              <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px"><span style="font-size: 14px; font-weight: 800; color: #4A7215">{{h.valor}}</span><span style="font-size: 12px; color: #5A6152">{{h.st}}</span></span>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{souSup}}" hint-placeholder-val="{{ false }}">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+            <span style="font-size: 16px; font-weight: 800">👁 Ver como motorista</span>
+            <span style="font-size: 13px; color: #5A6152">Só pra olhar e ajudar o motorista. Nada é enviado no lugar dele.</span>
+            <sc-for list="{{supLista}}" as="sm" hint-placeholder-count="3">
+              <button type="button" onClick="{{sm.ver}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; border: 1px solid #C9D1C0; background: #FFFFFF; border-radius: 12px; padding: 10px 12px; font-size: 15px; font-weight: 800; color: #2B2F27">{{sm.nome}}<span style="font-size: 12px; font-weight: 400; color: #5A6152">{{sm.info}}</span></button>
+            </sc-for>
+            <sc-if value="{{supVazio}}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; color: #5A6152">Nenhum motorista em viagem agora.</span></sc-if>
+          </div>
+        </sc-if>
+        <button type="button" onClick="{{sair}}" style="border: 2px solid #C9D1C0; background: #FFFFFF; color: #8A1F1F; border-radius: 14px; padding: 14px; font-size: 16px; font-weight: 800">Sair da conta</button>
+        
+      </div>
+    </sc-if>
+
+    <!-- ===== RASTREIO: escolher o assunto ===== -->
+    <sc-if value="{{telaSuporte}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <button type="button" onClick="{{irViagem}}" style="align-self: flex-start; border: 0; background: transparent; color: #4A7215; font-size: 15px; font-weight: 800; padding: 6px 0">← Voltar</button>
+        <h1 style="margin: 0; font-size: 22px; font-weight: 800">Falar com o rastreio</h1>
+        <span style="font-size: 14px; color: #5A6152">Escolha o assunto. Abre uma conversa com o time do rastreio aqui dentro do app.</span>
+        <sc-for list="{{motivos}}" as="mo" hint-placeholder-count="6">
+          <button type="button" onClick="{{mo.pick}}" style="border: 0; border-radius: 14px; background: #FFFFFF; padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)"><span style="font-size: 15px; font-weight: 800; color: #2B2F27">{{mo.nome}}</span><span style="font-size: 12px; color: #5A6152">{{mo.dica}}</span></button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ===== RASTREIO: conversa ===== -->
+    <sc-if value="{{telaChat}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px; margin: -16px; min-height: 100dvh; background: #ECE5DD">
+        <div style="position: sticky; top: 0; z-index: 2; background: #1F4E8C; color: #FFFFFF; padding: max(10px, env(safe-area-inset-top)) 14px 10px; display: flex; align-items: center; gap: 10px">
+          <button type="button" onClick="{{irViagem}}" aria-label="Voltar" style="border: 0; background: transparent; color: #FFFFFF; font-size: 20px; font-weight: 800; padding: 4px 8px 4px 0">←</button>
+          <span style="display: flex; flex-direction: column; flex-grow: 1"><span style="font-size: 15px; font-weight: 800">Rastreio · Transportadora Pianetto</span><span style="font-size: 12px; opacity: 0.9">{{atendMotivo}} · {{atendStatus}}</span></span>
+          <sc-if value="{{podeFinalizar}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{finalizarAtend}}" style="border: 1px solid #FFFFFF; background: transparent; color: #FFFFFF; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 800">Finalizar</button></sc-if>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 6px 12px; flex-grow: 1">
+          <sc-for list="{{chatMsgs}}" as="cm" hint-placeholder-count="4">
+            <div style="{{cm.caixa}}">
+              <span style="font-size: 11px; font-weight: 800; color: #4A7215">{{cm.autor}}</span>
+              <sc-if value="{{cm.ehImg}}" hint-placeholder-val="{{ false }}"><a href="{{cm.url}}" target="_blank" rel="noopener"><img src="{{cm.url}}" alt="Foto enviada" style="max-width: 100%; border-radius: 8px; display: block"></a></sc-if>
+              <sc-if value="{{cm.ehVid}}" hint-placeholder-val="{{ false }}"><video src="{{cm.url}}" controls playsinline style="max-width: 100%; border-radius: 8px"></video></sc-if>
+              <sc-if value="{{cm.ehAud}}" hint-placeholder-val="{{ false }}"><audio src="{{cm.url}}" controls style="width: 230px; max-width: 100%"></audio></sc-if>
+              <sc-if value="{{cm.ehArq}}" hint-placeholder-val="{{ false }}"><a href="{{cm.url}}" target="_blank" rel="noopener" style="color: #1F4E8C; font-weight: 800; font-size: 14px">📄 {{cm.nomeArq}}</a></sc-if>
+              <sc-if value="{{cm.temTxt}}" hint-placeholder-val="{{ true }}"><span style="font-size: 14px; white-space: pre-wrap; color: #2B2F27">{{cm.txt}}</span></sc-if>
+              <span style="font-size: 10px; color: #7A8172; align-self: flex-end">{{cm.hora}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{temAvisoChat}}" hint-placeholder-val="{{ false }}"><div role="status" style="margin: 0 12px; background: #2B2F27; color: #FFFFFF; border-radius: 10px; padding: 8px; font-size: 13px; text-align: center">{{avisoChat}}</div></sc-if>
+        <sc-if value="{{chatAberto}}" hint-placeholder-val="{{ true }}">
+          <div style="position: sticky; bottom: 0; background: #F0F0F0; padding: 8px 10px max(12px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; gap: 8px; align-items: flex-end">
+              <label for="chatTx" style="position: absolute; left: -9999px">Mensagem</label>
+              <textarea id="chatTx" rows="1" placeholder="Escreva aqui…" style="flex-grow: 1; font: inherit; font-size: 15px; padding: 10px 12px; border: 0; border-radius: 20px; resize: none; max-height: 120px"></textarea>
+              <button type="button" onClick="{{enviarTxt}}" aria-label="Enviar" style="border: 0; border-radius: 50%; width: 44px; height: 44px; background: #62AF00; color: #FFFFFF; font-size: 18px; font-weight: 800; flex-shrink: 0">➤</button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+              <label for="chatFoto" style="text-align: center; background: #FFFFFF; border-radius: 10px; padding: 10px 4px; font-size: 13px; font-weight: 800; color: #2B2F27; cursor: pointer">📷 Foto/vídeo<input id="chatFoto" type="file" accept="image/*,video/*" multiple onChange="{{addChatArq}}" style="display: none"></label>
+              <label for="chatPdf" style="text-align: center; background: #FFFFFF; border-radius: 10px; padding: 10px 4px; font-size: 13px; font-weight: 800; color: #2B2F27; cursor: pointer">📎 PDF/arquivo<input id="chatPdf" type="file" accept="application/pdf,image/*" multiple onChange="{{addChatArq}}" style="display: none"></label>
+              <button type="button" onClick="{{gravarAudio}}" style="{{estGravar}}">{{txtGravar}}</button>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{chatFechado}}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 8px">
+            <span role="status" style="background: #E8F3D9; color: #2F4A0D; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 800; text-align: center">✔ Atendimento finalizado</span>
+            <button type="button" onClick="{{irViagem}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 16px; font-weight: 800; padding: 14px">Voltar pra viagem</button>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ===== ORDEM DE CARREGAMENTO ===== -->
+    <sc-if value="{{telaOrdem}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <button type="button" onClick="{{irViagem}}" style="align-self: flex-start; border: 0; background: transparent; color: #4A7215; font-size: 15px; font-weight: 800; padding: 6px 0">← Voltar</button>
+        <div style="background: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+          <div style="background: #FFFFFF; padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 3px solid #0087C1">
+            <img src="img/pianetto.png" alt="Transportadora Pianetto" style="width: 54px; height: auto">
+            <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px"><span style="font-size: 12px; font-weight: 800; letter-spacing: 1px; color: #0087C1">ORDEM DE CARREGAMENTO</span><span style="font-size: 16px; font-weight: 800; color: #2B2F27">Transportadora Pianetto</span></span>
+          </div>
+          <div style="background: #E8F3D9; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 12px; font-weight: 700; color: #3B5E12">{{via.refNome}} (informar na portaria)</span>
+            <span style="font-size: 24px; font-weight: 800; letter-spacing: 1px; color: #2B2F27">{{via.ref}}</span>
+          </div>
+          <div style="padding: 14px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; font-size: 13px">
+            <sc-for list="{{ordemCampos}}" as="c" hint-placeholder-count="8">
+              <span style="display: flex; flex-direction: column; gap: 2px"><span style="color: #5A6152; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px">{{c.k}}</span><span style="font-weight: 800">{{c.v}}</span></span>
+            </sc-for>
+          </div>
+        </div>
+        <span style="font-size: 12px; color: #5A6152; text-align: center">Mesmo modelo pra todos os clientes. Muda só a referência: PM (Jalles), nº da carga (EBBA), remessa (YPE).</span>
+      </div>
+    </sc-if>
+
+    <!-- ===== NEGOCIAR ===== -->
+    <sc-if value="{{telaNeg}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <button type="button" onClick="{{irFretes}}" style="align-self: flex-start; border: 0; background: transparent; color: #4A7215; font-size: 15px; font-weight: 800; padding: 6px 0">← Voltar</button>
+        <h1 style="margin: 0; font-size: 22px; font-weight: 800">Negociar frete</h1>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+          <span style="font-size: 16px; font-weight: 800">{{neg.origem}} → {{neg.destino}}</span>
+          <span style="font-size: 13px; color: #5A6152">{{neg.produto}} · {{neg.peso}} · {{neg.veiculo}} · coleta {{neg.coleta}}</span>
+          <span style="font-size: 13px; color: #5A6152">Valor oferecido</span>
+          <span style="font-size: 24px; font-weight: 800; color: #4A7215">{{neg.valor}}</span>
+          <span style="font-size: 12px; color: #5A6152">{{neg.cond}}</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <button type="button" onClick="{{modoAceito}}" style="{{estAceito}}">Aceito o valor</button>
+          <button type="button" onClick="{{modoContra}}" style="{{estContra}}">Propor outro valor</button>
+        </div>
+        <sc-if value="{{mostraContra}}" hint-placeholder-val="{{ false }}">
+          <label for="contra" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700">Quanto você quer (R$)
+            <input id="contra" type="number" inputmode="numeric" placeholder="Ex.: 3200" value="{{contra}}" onChange="{{mudaContra}}" style="font: inherit; font-size: 18px; padding: 12px; border: 1px solid #C9D1C0; border-radius: 12px; background: #FFFFFF">
+          </label>
+        </sc-if>
+        <sc-if value="{{naoFrota}}" hint-placeholder-val="{{ true }}">
+          <div style="background: #FFFFFF; border-radius: 14px; padding: 12px 14px; font-size: 14px; display: flex; justify-content: space-between">
+            <span style="color: #5A6152">Caminhão</span><span style="font-weight: 800">Placa do seu cadastro</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{modoFrota}}" hint-placeholder-val="{{ false }}">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+            <span style="font-size: 15px; font-weight: 800">Quem vai? <span style="font-weight: 600; color: #5A6152">(pode marcar mais de um)</span></span>
+            <sc-for list="{{escolhaMot}}" as="e" hint-placeholder-count="3">
+              <button type="button" onClick="{{e.pick}}" style="{{e.estilo}}"><span style="display: flex; flex-direction: column; align-items: flex-start; gap: 1px"><span style="font-weight: 800">{{e.nome}}</span><span style="font-size: 12px">{{e.sub}}</span></span><span aria-hidden="true">{{e.marca}}</span></button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <button type="button" onClick="{{enviar}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 17px; font-weight: 800; padding: 15px">Enviar pro embarcador</button>
+        <span style="font-size: 12px; color: #5A6152; text-align: center">Abre o WhatsApp de um embarcador da Transportadora Pianetto com a sua proposta pronta.</span>
+      </div>
+    </sc-if>
+
+    <!-- ===== ENVIADO → WHATSAPP ===== -->
+    <sc-if value="{{telaEnviado}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px; padding-top: 10px">
+        <div style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+          <span style="width: 56px; height: 56px; border-radius: 50%; background: #E8F3D9; display: flex; align-items: center; justify-content: center" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#4A7215" stroke-width="3"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <span style="font-size: 19px; font-weight: 800">Sua proposta vai pro {{emb.nome}}</span>
+          <span style="font-size: 14px; color: #5A6152">Embarcador da Transportadora Pianetto. Toque abaixo pra abrir o WhatsApp com a mensagem pronta e é só enviar.</span>
+          <div style="background: #F4F6F1; border-radius: 12px; padding: 12px; font-size: 13px; text-align: left; white-space: pre-line; width: 100%; box-sizing: border-box">{{emb.msg}}</div>
+        </div>
+        <a href="{{emb.link}}" target="_blank" rel="noopener" style="display: block; text-align: center; text-decoration: none; border-radius: 14px; background: #25A244; color: #FFFFFF; font-size: 17px; font-weight: 800; padding: 15px">Abrir WhatsApp do {{emb.nome}}</a>
+        <button type="button" onClick="{{irFretes}}" style="border: 0; background: transparent; color: #4A7215; font-size: 15px; font-weight: 800; padding: 6px">Voltar pros fretes</button>
+        <span style="font-size: 12px; color: #5A6152; text-align: center">Os embarcadores são chamados em rodízio: cada proposta vai pro próximo da fila.</span>
+      </div>
+    </sc-if>
+
+    <!-- ===== PARCEIROS: lista ===== -->
+    <sc-if value="{{telaParceiros}}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 20px 16px 120px; display: flex; flex-direction: column; gap: 16px">
+        <div style="background: linear-gradient(135deg, #62AF00, #3B6B0E); color: #fff; border-radius: 20px; padding: 24px 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 13px; font-weight: 800; background: rgba(255,255,255,.2); align-self: flex-start; padding: 4px 12px; border-radius: 999px">EM BREVE</span>
+          <span style="font-size: 26px; font-weight: 800; line-height: 1.15">Parceiros Meu Frete</span>
+          <span style="font-size: 16px; line-height: 1.4">Desconto de verdade na estrada, só por usar o app. É só mostrar o app no balcão.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+          <div style="background: #fff; border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06)"><span style="font-size: 36px">⛽</span><span style="font-size: 16px; font-weight: 800">Postos</span><span style="font-size: 13px; color: #5A6152">Diesel mais barato</span></div>
+          <div style="background: #fff; border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06)"><span style="font-size: 36px">🍽️</span><span style="font-size: 16px; font-weight: 800">Restaurantes</span><span style="font-size: 13px; color: #5A6152">Desconto na refeição</span></div>
+          <div style="background: #fff; border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06)"><span style="font-size: 36px">🔧</span><span style="font-size: 16px; font-weight: 800">Oficinas</span><span style="font-size: 13px; color: #5A6152">Revisão e mão de obra</span></div>
+          <div style="background: #fff; border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06)"><span style="font-size: 36px">🛞</span><span style="font-size: 16px; font-weight: 800">Borracharias</span><span style="font-size: 13px; color: #5A6152">Socorro na rodovia</span></div>
+          <div style="background: #fff; border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06)"><span style="font-size: 36px">🅿️</span><span style="font-size: 16px; font-weight: 800">Pátios</span><span style="font-size: 13px; color: #5A6152">Pernoite seguro</span></div>
+          <div style="background: #fff; border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06)"><span style="font-size: 36px">🛏️</span><span style="font-size: 16px; font-weight: 800">Hotéis</span><span style="font-size: 13px; color: #5A6152">Diária com desconto</span></div>
+        </div>
+        <div style="background: #fff; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.06)">
+          <span style="font-size: 17px; font-weight: 800">Como vai funcionar</span>
+          <span style="font-size: 15px">1️⃣ Abra o app e veja os parceiros mais perto de você.</span>
+          <span style="font-size: 15px">2️⃣ Mostre o código do app no balcão.</span>
+          <span style="font-size: 15px">3️⃣ Pronto: o desconto sai na hora.</span>
+        </div>
+        <span style="font-size: 14px; color: #5A6152; text-align: center">Estamos fechando as parcerias. Assim que tiver na sua região, a gente te avisa aqui no app.</span>
+      </div>
+    </sc-if>
+
+    <!-- ===== PARCEIRO: detalhe ===== -->
+    <sc-if value="{{telaDetalhe}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <button type="button" onClick="{{voltar}}" style="align-self: flex-start; border: 0; background: transparent; color: #4A7215; font-size: 15px; font-weight: 800; padding: 6px 0">← Voltar</button>
+        <div style="background: #FFFFFF; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(43,47,39,0.08)">
+          <div style="display: flex; gap: 12px; align-items: center">
+            <span style="{{sel.logoEstilo}}" aria-hidden="true">{{sel.sigla}}</span>
+            <div style="display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 18px; font-weight: 800">{{sel.nome}}</span>
+              <span style="font-size: 13px; color: #5A6152">{{sel.cat}} · {{sel.dist}}</span>
+            </div>
+          </div>
+          <div style="background: #E8F3D9; border-radius: 12px; padding: 12px; font-size: 17px; font-weight: 800; color: #3B5E12">{{sel.beneficio}}</div>
+          <div style="font-size: 13px; color: #5A6152">{{sel.regra}}</div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+            <span>📍 {{sel.endereco}}</span>
+            <span>🕒 {{sel.horario}}</span>
+            <span>✔ {{sel.estrutura}}</span>
+          </div>
+        </div>
+        <button type="button" onClick="{{gerarQr}}" style="border: 0; border-radius: 14px; background: #62AF00; color: #FFFFFF; font-size: 17px; font-weight: 800; padding: 15px">Gerar QR Code do desconto</button>
+        <span style="font-size: 12px; color: #5A6152; text-align: center">Mostre o QR no caixa. O parceiro lê e confirma o desconto.</span>
+      </div>
+    </sc-if>
+
+    <!-- ===== QR ===== -->
+    <sc-if value="{{telaQr}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px; align-items: center">
+        <button type="button" onClick="{{voltarDetalhe}}" style="align-self: flex-start; border: 0; background: transparent; color: #4A7215; font-size: 15px; font-weight: 800; padding: 6px 0">← Voltar</button>
+        <div style="background: #FFFFFF; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 2px 8px rgba(43,47,39,0.08); width: 100%; box-sizing: border-box">
+          <span style="font-size: 16px; font-weight: 800; text-align: center">{{sel.nome}}</span>
+          <span style="font-size: 15px; font-weight: 800; color: #4A7215; text-align: center">{{sel.beneficio}}</span>
+          <div role="img" aria-label="QR Code do desconto (ilustração)" style="display: flex; flex-direction: column; padding: 10px; background: #FFFFFF; border: 1px solid #DDE3D5; border-radius: 8px">
+            <sc-for list="{{qrLinhas}}" as="linha" hint-placeholder-count="21">
+              <div style="display: flex">
+                <sc-for list="{{linha.cel}}" as="q" hint-placeholder-count="21">
+                  <div style="{{q.s}}"></div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          <span style="font-size: 22px; font-weight: 800; letter-spacing: 2px">{{codigo}}</span>
+          <span style="font-size: 13px; color: #5A6152; text-align: center">Vale por 15 minutos · uso único</span>
+        </div>
+        <span style="font-size: 12px; color: #5A6152; text-align: center">Ilustração: no app real o QR é gerado e validado pelo sistema.</span>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- menu de baixo -->
+  <sc-if value="{{temMenu}}" hint-placeholder-val="{{ true }}">
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #FFFFFF; border-top: 1px solid #DDE3D5">
+    <button type="button" onClick="{{irFretes}}" style="{{navFretes}}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="7" width="12" height="9" rx="1"></rect><path d="M14 10h4l3 3v3h-7z"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg>
+      <span>Fretes</span>
+    </button>
+    <button type="button" onClick="{{irViagem}}" style="{{navViagem}}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"></path><path d="M14 2v6h6M9 13h8M9 17h6"></path></svg>
+      <span>Viagem</span>
+    </button>
+    <button type="button" onClick="{{irParceiros}}" style="{{navParceiros}}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="1"></rect><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1s6 1 6 1zm0 0c2-4 6-4 6-1s-6 1-6 1z"></path></svg>
+      <span>Parceiros</span>
+    </button>
+    <button type="button" onClick="{{irPerfil}}" style="{{navPerfil}}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1-4 4-6 8-6s7 2 8 6"></path></svg>
+      <span>Perfil</span>
+    </button>
+  </div>
+</sc-if>
+</div>
+</template>
+<script>
+/* Meu Frete – motor de telas (lê o mesmo template do protótipo: {{valor}}, sc-if, sc-for, onClick/onChange) */
+class DCLogic { constructor(p) { this.props = p || {}; this.state = {}; } setState(u) { Object.assign(this.state, typeof u === 'function' ? u(this.state) : u); DC.agendar(); } }
+const DC = {
+  pega(esc, cam) { return cam.split('.').reduce((o, k) => (o == null ? undefined : o[k]), esc); },
+  expr(esc, s) { const m = String(s).trim().match(/^\{\{\s*(.+?)\s*\}\}$/); if (!m) return null; const e = m[1]; if (e === 'true') return { v: true }; if (e === 'false') return { v: false }; return { v: DC.pega(esc, e) }; },
+  texto(esc, s) { return String(s).replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, c) => { const v = DC.pega(esc, c); return v == null ? '' : v; }); },
+  ev: { onclick: 'click', onchange: 'change', oninput: 'input', onsubmit: 'submit', onkeydown: 'keydown' },
+  monta(no, esc, out, pos) {
+    if (no.nodeType === 3) { out.push(document.createTextNode(DC.texto(esc, no.nodeValue))); return; }
+    if (no.nodeType !== 1) return;
+    const tag = no.localName;
+    if (tag === 'sc-if') { const r = DC.expr(esc, no.getAttribute('value')); if (r && r.v) no.childNodes.forEach((c, i) => DC.monta(c, esc, out, pos + '.' + i)); return; }
+    if (tag === 'sc-for') { const r = DC.expr(esc, no.getAttribute('list')), as = no.getAttribute('as'); ((r && r.v) || []).forEach((it, n) => { const e2 = Object.create(esc); e2[as] = it; no.childNodes.forEach((c, i) => DC.monta(c, e2, out, pos + '.' + n + '_' + i)); }); return; }
+    const el = no.namespaceURI === 'http://www.w3.org/2000/svg' ? document.createElementNS(no.namespaceURI, tag) : document.createElement(tag);
+    let valor = null, temValor = false;
+    for (const a of Array.from(no.attributes)) {
+      const n = a.name; if (n.indexOf('hint-') === 0) continue;
+      if (DC.ev[n]) { const r = DC.expr(esc, a.value); if (r && typeof r.v === 'function') { let tipo = DC.ev[n]; if (tipo === 'change' && (tag === 'input' || tag === 'textarea') && !/^(file|checkbox|radio)$/i.test(no.getAttribute('type') || '')) tipo = 'input'; el.addEventListener(tipo, r.v); } continue; }
+      if (n === 'value' && /^(input|select|textarea)$/.test(tag)) { const r = DC.expr(esc, a.value); valor = r ? r.v : a.value; temValor = true; continue; }
+      if (n === 'checked' || n === 'disabled') { const r = DC.expr(esc, a.value); const v = r ? r.v : true; if (v) el.setAttribute(n, ''); el[n] = !!v; continue; }
+      el.setAttribute(n, DC.texto(esc, a.value));
+    }
+    el.setAttribute('data-k', pos); if (!temValor && /^(input|textarea)$/.test(tag)) el.setAttribute('data-livre', '1');
+    const filhos = []; no.childNodes.forEach((c, i) => DC.monta(c, esc, filhos, pos + '.' + i)); filhos.forEach(f => el.appendChild(f));
+    if (temValor) el.value = valor == null ? '' : valor;
+    out.push(el);
+  },
+  render() {
+    DC.pendente = false; const raiz = DC.raiz, foco = document.activeElement, kf = foco && foco.getAttribute && foco.getAttribute('data-k');
+    let sel = null; try { if (kf && foco.selectionStart != null) sel = [foco.selectionStart, foco.selectionEnd]; } catch (e) { }
+    const livres = {}, rolagem = {}; raiz.querySelectorAll('[data-livre]').forEach(e => { if (e.type !== 'file') livres[e.getAttribute('data-k')] = e.value; });
+    raiz.querySelectorAll('[data-k]').forEach(e => { if (e.scrollTop) rolagem[e.getAttribute('data-k')] = e.scrollTop; });
+    const vals = DC.comp.renderVals(), out = []; DC.tpl.content.childNodes.forEach((c, i) => DC.monta(c, vals, out, 'r' + i));
+    raiz.replaceChildren(...out);
+    Object.keys(livres).forEach(k => { const e = raiz.querySelector('[data-k="' + k + '"]'); if (e && e.getAttribute('data-livre')) e.value = livres[k]; });
+    Object.keys(rolagem).forEach(k => { const e = raiz.querySelector('[data-k="' + k + '"]'); if (e) e.scrollTop = rolagem[k]; });
+    if (kf) { const e = raiz.querySelector('[data-k="' + kf + '"]'); if (e) { e.focus(); try { if (sel) e.setSelectionRange(sel[0], sel[1]); } catch (x) { } } }
+  },
+  agendar() { if (DC.pendente) return; DC.pendente = true; requestAnimationFrame(DC.render); },
+  iniciar(Classe) { DC.tpl = document.getElementById('tpl'); DC.raiz = document.getElementById('app'); DC.comp = new Classe({}); DC.render(); if (DC.comp.init) DC.comp.init(); }
+};
+
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { modoFrota: false, avisoFrota: '', escolhidos: {}, frota: [{ id: 'm1', nome: 'Arnaldo Santos', placa: 'ABC1D23', viagens: 9, total: 41200, emViagem: false }, { id: 'm2', nome: 'Walter Rabelo', placa: 'QWE4R56', viagens: 7, total: 33600, emViagem: true }, { id: 'm3', nome: 'Marcos Silva', placa: '', viagens: 4, total: 15800, emViagem: false }], tela: 'splash', fsel: null, avisoLogin: '', aviso: '', aguarda: {}, avisoF: '', reanalise: false, viagemAtiva: false, dbFretes: [], gps: null, passo: 2, notas: 0, ent: 0, pagou: false, vDesc: '', descRes: '', forcaFora: false, nota: 0, avaliou: false, vez: 0, emb: null, fAberto: false, fVeic: { Carreta: true }, fReg: '', fUf: '', fOri: '', fDes: '', fPeso: '0', cat: 'Todos', cidade: 'Rio Verde/GO', sel: null, neg: null, modo: 'aceito', contra: '', enviados: {} }; }
+  static fmtFrete(r) {
+    const br = n => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const d = s => s ? s.slice(8, 10) + '/' + s.slice(5, 7) : '';
+    const ok = r.origem_lat != null, o = ok ? [r.origem_lat, r.origem_lng] : [-15.8, -47.9];
+    return { id: r.id, origem: r.origem_cidade + '/' + r.origem_uf, o, destino: r.destino_cidade + '/' + r.destino_uf,
+      dd: r.destino_lat != null ? [r.destino_lat, r.destino_lng] : [o[0] - 1.5, o[1] + 1.5],
+      produto: r.produto || 'Carga', peso: r.peso_t ? String(r.peso_t).replace('.', ',') + ' t' : 'a confirmar', veiculo: r.veiculo_texto || 'A combinar',
+      coleta: d(r.coleta_inicio) || 'imediata', valor: r.valor_motorista ? 'R$ ' + br(r.valor_motorista) : 'A combinar', cond: r.valor_condicao || '', obs: r.obs || '' };
+  }
+  async entrar() {
+    const cpf = ((document.getElementById('cpf') || {}).value || '').replace(/\D/g, ''), senha = (document.getElementById('senha') || {}).value || '';
+    if (cpf.length !== 11 || !senha) { this.setState({ avisoLogin: 'Digite o CPF (11 números) e a senha.' }); return; }
+    this.setState({ avisoLogin: 'Entrando…' });
+    const { error } = await window.sb.auth.signInWithPassword({ email: cpf + '@motorista.meufrete.app', password: senha });
+    if (error) { this.setState({ avisoLogin: 'CPF ou senha incorretos. Se esqueceu, toque em "Esqueceu sua senha?".' }); return; }
+    this.setState({ avisoLogin: '', tela: 'fretes' }); this.pedirGps(); this.carregarFretes(); this.carregarViagem();
+  }
+  async carregarFretes() {
+    const { data, error } = await window.sb.from('fretes').select('*').eq('status', 'spot').eq('visivel_motoristas', true).order('coleta_inicio');
+    if (error) { this.setState({ avisoF: 'Não consegui carregar os fretes agora. Tenta de novo em instantes.' }); return; }
+    const l = (data || []).map(Component.fmtFrete);
+    this.setState({ dbFretes: l, avisoF: l.length ? '' : 'Ainda não tem frete liberado pra você. Assim que a transportadora aprovar seu cadastro, os fretes aparecem aqui.' });
+  }
+  async carregarViagem(esp) {
+    try {
+      const { data: u } = await window.sb.auth.getUser(); const uid = u && u.user && u.user.id; if (!uid) return;
+      if (!this.state.meuNome) { const { data: m } = await window.sb.from('motoristas').select('nome,supervisor').eq('id', uid).limit(1); if (m && m[0]) this.setState({ meuNome: m[0].nome, souSup: !!m[0].supervisor }); }
+      if (!this.__histOk) { this.__histOk = true; window.sb.from('viagens').select('*').eq('motorista_id', uid).neq('status', 'cancelada').order('criado_em', { ascending: false }).limit(30).then(r => { if (r && !r.error) this.setState({ hist: r.data || [] }); }, () => {}); }
+      const espV = arguments.length ? esp : this.state.espiando; const alvo = espV ? espV.id : uid;
+      if (this.state.souSup || (espV && espV.id)) { const { data: L } = await window.sb.from('viagens').select('id,motorista_id,origem,destino,status,placa,motoristas(nome)').not('status', 'in', '(finalizada,cancelada)').order('criado_em', { ascending: false }); this.setState({ supLista: (L || []).filter(x => x.motorista_id !== uid) }); }
+      const { data: vs } = await window.sb.from('viagens').select('*').eq('motorista_id', alvo).not('status', 'in', '(finalizada,cancelada)').order('criado_em', { ascending: false }).limit(1);
+      const v = (vs || [])[0];
+      if (!v) { if (this.state.dbViagem || espV) this.setState({ dbViagem: null, dbDocs: [], dbFotos: [], viagemAtiva: false }); this.rastrear(); return; }
+      const { data: ds } = await window.sb.from('documentos').select('id,tipo,nome,arquivo,enviado_por_tipo,criado_em').eq('viagem_id', v.id).order('criado_em');
+      const docs = (ds || []).filter(d => d.enviado_por_tipo !== 'motorista'), urls = {}, fotos = (ds || []).filter(d => d.enviado_por_tipo === 'motorista');
+      if (docs.length) { const { data: su } = await window.sb.storage.from('docs').createSignedUrls(docs.map(d => d.arquivo), 7 * 86400); (su || []).forEach(x => { if (x && x.path) urls[x.path] = x.signedUrl; }); }
+      const base = { indo_carregar: 2, carregando: 2, em_transito: 4, aguardando_descarga: 5, descarregado: 6 }[v.status] || 2;
+      const salvo = espV ? 0 : ((this.state.passoV || {})[v.id] || 0);
+      this.setState({ dbViagem: v, dbDocs: docs, dbUrls: urls, dbFotos: fotos, viagemAtiva: true, uid, passo: Math.max(base, salvo) }); this.rastrear();
+    } catch (e) { }
+  }
+  async subirFotos(tipo, files) {
+    const v = this.state.dbViagem, uid = this.state.uid; if (this.state.espiando) { this.setState({ aviso: 'Modo supervisor: só pra olhar, nada é enviado.' }); return 0; } if (!v || !uid || !files || !files.length) return 0;
+    let n = 0;
+    for (let k = 0; k < files.length; k++) {
+      const f = files[k], ext = (String(f.name || '').match(/\.(\w{2,5})$/) || [, (/pdf/.test(f.type) ? 'pdf' : 'jpg')])[1].toLowerCase();
+      const path = 'viagens/' + v.id + '/motorista/' + tipo + '_' + Date.now() + '_' + k + '.' + ext;
+      const up = await window.sb.storage.from('docs').upload(path, f, { contentType: f.type || undefined, upsert: false });
+      if (up.error) continue;
+      const ins = await window.sb.from('documentos').insert({ tipo, nome: tipo === 'nf' ? 'Foto da nota' : tipo === 'descarga' ? 'Recibo de descarga' : 'Comprovante de entrega', viagem_id: v.id, motorista_id: uid, empresa_id: v.empresa_id, arquivo: path, enviado_por_tipo: 'motorista' });
+      if (!ins.error) n++;
+    }
+    return n;
+  }
+  /* 16/11/2026 (Jesimiel): botões da viagem avisam o time e a torre de monitoramento roda pelo app (com a viagem ativa e o app aberto) */
+  evento(ev) { const v = this.state.dbViagem; if (!v || this.state.espiando) return; try { window.sb.rpc('motorista_evento', { vid: v.id, ev: ev }).then(() => { }, () => { }); } catch (e) { } }
+  rastrear() {
+    const S = this.state, v = S.dbViagem, ativo = !!v && !S.espiando && ['indo_carregar', 'carregando', 'em_transito', 'aguardando_descarga'].indexOf(v.status) >= 0;
+    if (!ativo) { if (this.gpsW != null) { try { navigator.geolocation.clearWatch(this.gpsW); } catch (e) { } this.gpsW = null; } return; }
+    if (this.gpsW != null || !navigator.geolocation) return;
+    this.gpsUlt = 0;
+    this.gpsW = navigator.geolocation.watchPosition(p => {
+      const s = this.state, vv = s.dbViagem; if (s.gpsNegado) this.setState({ gpsNegado: false }); if (!vv || s.espiando || !s.uid || Date.now() - (this.gpsUlt || 0) < 120000) return; this.gpsUlt = Date.now();
+      window.sb.from('posicoes').insert({ viagem_id: vv.id, motorista_id: s.uid, lat: p.coords.latitude, lng: p.coords.longitude, precisao_m: p.coords.accuracy || null, velocidade_kmh: p.coords.speed != null ? Math.round(p.coords.speed * 3.6) : null, registrado_em: new Date(p.timestamp || Date.now()).toISOString() }).then(() => { }, () => { });
+    }, () => this.setState({ gpsNegado: true }), { enableHighAccuracy: true, maximumAge: 60000, timeout: 30000 });
+  }
+  marcaPasso(p) { const v = this.state.dbViagem; this.setState({ passo: p, passoV: v ? { ...(this.state.passoV || {}), [v.id]: p } : this.state.passoV }); }
+  async sair() { try { await window.sb.auth.signOut(); } catch (e) { } this.setState({ tela: 'login', espiando: null, souSup: false, supLista: [], dbViagem: null, dbDocs: [], viagemAtiva: false, meuNome: '', uid: '', enviados: {}, aguarda: {}, avisoLogin: '' }); }
+  pedirGps() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(p => this.setState({ gps: [p.coords.latitude, p.coords.longitude], cidade: 'GPS' }), () => { }, { timeout: 10000, maximumAge: 600000 });
+  }
+  /* ===== 16/11/2026 (Jesimiel): atendimento com o rastreio dentro do app ===== */
+  async carregarChat() {
+    const S = this.state; if (!S.dbViagem) return; // protótipo: conversa só local
+    try {
+      const alvo = S.espiando ? S.espiando.id : S.uid; if (!alvo) return;
+      const { data: as } = await window.sb.from('atendimentos').select('*').eq('motorista_id', alvo).order('criado_em', { ascending: false }).limit(1);
+      const a = (as || [])[0] || null; if (!a) { this.setState({ atend: null, msgs: [] }); return; }
+      const { data: ms } = await window.sb.from('atend_msgs').select('*').eq('atendimento_id', a.id).order('criado_em');
+      const urls = Object.assign({}, S.chatUrls || {}), falta = (ms || []).filter(m => m.arquivo && !urls[m.arquivo]).map(m => m.arquivo);
+      if (falta.length) { const { data: su } = await window.sb.storage.from('docs').createSignedUrls(falta, 7 * 86400); (su || []).forEach(x => { if (x && x.path) urls[x.path] = x.signedUrl; }); }
+      this.setState({ atend: a, msgs: ms || [], chatUrls: urls });
+    } catch (e) { }
+  }
+  async abrirAtend(motivo) {
+    const S = this.state, v = S.dbViagem, ini = { autor_tipo: 'sistema', texto: 'Atendimento aberto: ' + motivo + '.\nConta pra gente o que aconteceu. Pode mandar texto, foto, vídeo, áudio ou PDF.', criado_em: new Date().toISOString() };
+    if (S.espiando) { this.setState({ aviso: 'Modo supervisor: só pra olhar.' }); return; }
+    if (!v) { this.setState({ atend: { id: 'demo', motivo: motivo, status: 'aberto' }, msgs: [ini], tela: 'chat', avisoChat: '' }); return; }
+    this.setState({ avisoChat: 'Abrindo…', tela: 'chat' });
+    const { data, error } = await window.sb.from('atendimentos').insert({ viagem_id: v.id, motorista_id: S.uid, empresa_id: v.empresa_id, motivo: motivo, status: 'aberto' }).select().single();
+    if (error) { this.setState({ avisoChat: 'Não consegui abrir agora. Tenta de novo ou chame a Athena no WhatsApp.' }); return; }
+    this.setState({ atend: data, msgs: [], avisoChat: '' }); this.carregarChat();
+  }
+  async mandar(texto, file) {
+    const S = this.state, a = S.atend; if (!a || a.status !== 'aberto' || S.espiando) return;
+    const tipoArq = file ? (file.type || '') : '';
+    if (!S.dbViagem) { // protótipo
+      const url = file ? URL.createObjectURL(file) : ''; const m = { autor_tipo: 'motorista', autor_nome: S.meuNome || 'Você', texto: texto || '', arquivo: url, mime: tipoArq, nome: file ? file.name : '', criado_em: new Date().toISOString(), _url: url };
+      const nMot = (S.msgs || []).filter(x => x.autor_tipo === 'motorista').length;
+      this.setState({ msgs: (S.msgs || []).concat([m]) });
+      if (!nMot) setTimeout(() => this.setState({ msgs: (this.state.msgs || []).concat([{ autor_tipo: 'time', autor_nome: 'Nathany · Rastreio', texto: 'Oi! Aqui é a Nathany, do rastreio. Já estou vendo seu caso 👍 Me manda foto ou vídeo e um áudio explicando, que eu resolvo com você por aqui.', criado_em: new Date().toISOString() }]) }), 3500);
+      return;
+    }
+    let arquivo = null, mime = null;
+    if (file) {
+      const ext = (String(file.name || '').match(/\.(\w{2,5})$/) || [, (/pdf/.test(tipoArq) ? 'pdf' : /video/.test(tipoArq) ? 'mp4' : /audio/.test(tipoArq) ? (/mp4/.test(tipoArq) ? 'm4a' : 'webm') : 'jpg')])[1].toLowerCase();
+      arquivo = 'viagens/' + S.dbViagem.id + '/motorista/chat_' + Date.now() + '_' + Math.floor(Math.random() * 1000) + '.' + ext; mime = tipoArq || null;
+      const up = await window.sb.storage.from('docs').upload(arquivo, file, { contentType: mime || undefined, upsert: false });
+      if (up.error) { this.setState({ avisoChat: 'Não consegui enviar o arquivo. Tenta de novo.' }); return; }
+    }
+    const { error } = await window.sb.from('atend_msgs').insert({ atendimento_id: a.id, autor_tipo: 'motorista', autor_nome: S.meuNome || 'Motorista', texto: texto || null, arquivo: arquivo, mime: mime });
+    if (error) { this.setState({ avisoChat: 'Não consegui enviar. Tenta de novo.' }); return; }
+    this.setState({ avisoChat: '' }); this.carregarChat();
+  }
+  async gravar() {
+    if (this.rec && this.rec.state === 'recording') { this.rec.stop(); return; }
+    try {
+      const st = await navigator.mediaDevices.getUserMedia({ audio: true }); const pedacos = [];
+      const r = new MediaRecorder(st); this.rec = r;
+      r.ondataavailable = e => { if (e.data && e.data.size) pedacos.push(e.data); };
+      r.onstop = () => { st.getTracks().forEach(t => t.stop()); const tipo = r.mimeType || 'audio/webm'; const f = new File(pedacos, 'audio_' + Date.now() + (/mp4/.test(tipo) ? '.m4a' : '.webm'), { type: tipo }); this.setState({ gravando: false, avisoChat: 'Enviando áudio…' }); this.mandar('', f).then(() => this.setState({ avisoChat: '' })); };
+      r.start(); this.setState({ gravando: true, avisoChat: '' });
+    } catch (e) { this.setState({ avisoChat: 'Toque em PERMITIR quando o celular perguntar do microfone. Se não perguntar, feche e abra o app de novo.' }); }
+  }
+  async finalizar() {
+    const S = this.state, a = S.atend; if (!a || S.espiando) return;
+    if (!S.dbViagem) { this.setState({ atend: Object.assign({}, a, { status: 'finalizado' }) }); return; }
+    await window.sb.from('atendimentos').update({ status: 'finalizado', finalizado_em: new Date().toISOString(), finalizado_por: 'motorista' }).eq('id', a.id);
+    this.carregarChat();
+  }
+  async init() {
+    try { const { data } = await window.sb.auth.getSession(); if (data && data.session) { this.setState({ tela: 'fretes' }); this.pedirGps(); this.carregarFretes(); this.carregarViagem(); } } catch (e) { }
+    setInterval(() => { if (['fretes', 'frete'].indexOf(this.state.tela) >= 0) this.carregarFretes(); if (this.state.tela === 'viagem') this.carregarViagem(); }, 120000);
+    setInterval(() => { if (this.state.tela === 'chat' && !document.hidden) this.carregarChat(); }, 6000); // 16/11/2026: conversa com o rastreio
+  }
+  renderVals() {
+    const S = this.state;
+    const cid = (S.cidade === 'GPS' && S.gps) ? S.gps : (({ 'Rio Verde/GO': [-17.79, -50.92], 'Goiânia/GO': [-16.68, -49.25], 'Patos de Minas/MG': [-18.58, -46.52], 'Blumenau/SC': [-26.92, -49.07] })[S.cidade] || [-17.79, -50.92]);
+    const km = (a, b) => { const r = Math.PI / 180, dLa = (b[0] - a[0]) * r, dLo = (b[1] - a[1]) * r; const h = Math.sin(dLa / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLo / 2) ** 2; return Math.round(12742 * Math.asin(Math.sqrt(h))); };
+    const fmt = d => d < 3 ? 'aqui na cidade' : 'a ' + d + ' km';
+    /* fretes reais do app (SPOT e Negociação de 16/11/2026), sem cliente, nº de carga ou senha */
+    const GOI = [-15.32, -49.12], NER = [-16.40, -49.22], BLU = [-26.92, -49.07], PAT = [-18.58, -46.52];
+    const jal = 'Pedágio incluso. 360 fardos. Sider precisa de madeirite.';
+    const F = S.dbFretes || [];
+    const VAZIO = { id: '', origem: '', o: cid, destino: '', dd: cid, produto: '', peso: '', veiculo: '', coleta: '', valor: '', cond: '', obs: '', dist: '', botao: '', botaoEstilo: '', pedir: () => {} };
+    const catV = f => /truck/i.test(f.veiculo) ? 'Truck' : /bitrem|rodotrem/i.test(f.veiculo) ? 'Bitrem' : 'Carreta';
+    const regUF = { GO: 'Centro-Oeste', MT: 'Centro-Oeste', MS: 'Centro-Oeste', DF: 'Centro-Oeste', MG: 'Sudeste', SP: 'Sudeste', RJ: 'Sudeste', ES: 'Sudeste', SC: 'Sul', RS: 'Sul', PR: 'Sul' };
+    const sem = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const passa = f => { const uf = f.origem.split('/')[1], ufD = f.destino.split('/')[1], t = parseFloat(String(f.peso).replace(',', '.')) || 0;
+      return S.fVeic[catV(f)] && (!S.fReg || regUF[uf] === S.fReg) && (!S.fUf || uf === S.fUf) && (!S.fOri || sem(f.origem).indexOf(sem(S.fOri)) >= 0) && (!S.fDes || sem(f.destino).indexOf(sem(S.fDes)) >= 0 || sem(ufD) === sem(S.fDes)) && (S.fPeso === '0' || t <= Number(S.fPeso)); };
+    const btn = on => 'width: 100%; border: 0; font-size: 16px; font-weight: 800; padding: 13px; ' + (on ? 'background: #E8F3D9; color: #3B5E12' : 'background: #62AF00; color: #FFFFFF');
+    const fretes = F.filter(passa).map(f => ({ ...f, d: km(cid, f.o) })).sort((a, b) => a.d - b.d).map(f => ({
+      ...f, transp: 'Transportadora Pianetto', dist: fmt(f.d),
+      botao: (S.viagemAtiva && !S.modoFrota) ? '🔒 Finalize sua viagem atual pra pegar outro' : S.aguarda[f.id] ? '✔ Você disse que fechou' : S.enviados[f.id] ? '✔ ' + S.enviados[f.id] : 'Negociar frete', botaoEstilo: (S.viagemAtiva && !S.modoFrota) ? 'width: 100%; border: 0; font-size: 14px; font-weight: 800; padding: 13px; background: #E9ECE5; color: #5A6152' : btn(!!S.enviados[f.id]),
+      abrir: () => this.setState({ tela: 'frete', fsel: f.id }),
+      negAberta: !S.viagemAtiva && !!S.enviados[f.id] && !S.aguarda[f.id], aguardando: !S.viagemAtiva && !!S.aguarda[f.id], embNome: (S.emb && S.emb.nome) || 'embarcador',
+      fechou: () => this.setState({ aguarda: { ...S.aguarda, [f.id]: true } }),
+      simConfirma: () => this.setState({ viagemAtiva: true, passo: 2, avaliou: false, enviados: {}, aguarda: {}, tela: 'viagem', aviso: 'O embarcador confirmou! Frete fechado. A ordem de coleta chega aqui.' }),
+      naoFechou: () => { const e = { ...S.enviados }; delete e[f.id]; this.setState({ enviados: e, avisoF: 'Tudo bem! Esse frete não fechou. Olha os outros fretes perto de você.' }); },
+      pedir: () => (S.viagemAtiva && !S.modoFrota) ? this.setState({ tela: 'viagem', aviso: '' }) : this.setState({ tela: 'neg', neg: f.id, modo: 'aceito', contra: '' })
+    }));
+    const neg = F.find(f => f.id === S.neg) || F[0] || VAZIO;
+    const fd0 = fretes.find(f => f.id === S.fsel) || fretes[0] || VAZIO;
+    const lonMin = Math.min(fd0.o[1], fd0.dd[1]), lonMax = Math.max(fd0.o[1], fd0.dd[1]), latMin = Math.min(fd0.o[0], fd0.dd[0]), latMax = Math.max(fd0.o[0], fd0.dd[0]);
+    const span = Math.max(lonMax - lonMin, (latMax - latMin) * 1.9, 0.5);
+    const px = lon => 180 + (lon - (lonMin + lonMax) / 2) / span * 260, py = lat => 95 - (lat - (latMin + latMax) / 2) / span * 260 * 0.52;
+    const ox = Math.round(px(fd0.o[1])), oy = Math.round(py(fd0.o[0])), dx = Math.round(px(fd0.dd[1])), dy = Math.round(py(fd0.dd[0]));
+    const fd = { ...fd0, ox, oy, dx, dy, rotaPath: 'M' + ox + ' ' + oy + ' Q ' + Math.round((ox + dx) / 2) + ' ' + (Math.min(oy, dy) - 30) + ' ' + dx + ' ' + dy,
+      kmRota: '≈ ' + Math.round(km(fd0.o, fd0.dd) * 1.2) + ' km', mapsLink: 'https://www.google.com/maps/dir/' + encodeURIComponent(fd0.origem) + '/' + encodeURIComponent(fd0.destino) };
+    /* viagem de exemplo: frete Nerópolis → Cajamar (dados reais do frete, referência e placa ilustrativas) */
+    const DV = S.dbViagem;
+    const via = DV ? { origem: DV.origem || '', destino: DV.destino || '', produto: DV.produto || 'Carga', peso: DV.peso_t ? String(DV.peso_t).replace('.', ',') + ' t' : 'a confirmar', veiculo: DV.veiculo_texto || (DV.placa ? 'Placa ' + DV.placa : ''), refNome: DV.ref_nome || 'Referência da carga', ref: DV.ref || '—' }
+      : { origem: 'Nerópolis/GO', destino: 'Cajamar/SP', produto: 'Alimentos · 30 paletes', peso: '28,5 t', veiculo: 'Carreta 6 eixos', refNome: 'Nº da carga do cliente', ref: '1002 8682 4' };
+    const passo = S.passo, nomes = ['Cadastro liberado', 'Ordem de carregamento', 'Fotos das notas', 'Documentos da viagem', 'Em viagem', 'Descarga', 'Comprovante de entrega', 'Avaliação'];
+    const etapas = nomes.map((n, i) => ({ nome: n, bola: 'width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; ' + (i < passo ? 'background: #62AF00' : i === passo ? 'background: #FFFFFF; border: 3px solid #62AF00; box-sizing: border-box' : 'background: #DDE3D5'), txt: i === passo ? 'font-weight: 800; color: #2B2F27' : (i < passo ? 'color: #2B2F27' : 'color: #7A8172') }));
+    const agoraH = new Date().getHours();
+    const previsao = agoraH < 10 ? 'hoje até 12h' : agoraH < 17 ? 'hoje às 17h' : 'amanhã até 12h';
+    const estrela = n => ({ rotulo: n + ' estrelas', pick: () => this.setState({ nota: n }), estilo: 'border: 0; background: transparent; font-size: 34px; line-height: 1; padding: 2px; color: ' + (S.nota >= n ? '#F2A900' : '#D3D8CD') });
+    const dl = n => () => this.setState({ aviso: n + ' salvo no celular' });
+    const zp = n => () => this.setState({ aviso: 'Abrindo o WhatsApp com ' + n });
+    const infoT = { ordem: 'PDF · mostrar na portaria', cte: 'PDF · emitido pelo time', mdfe: 'PDF · obrigatório na viagem', carta_frete: 'Valor e condições do frete', nf: 'Nota fiscal', vale_pedagio: 'Comprovante' };
+    const docsReais = (S.dbDocs || []).map(d => { const url = (S.dbUrls || {})[d.arquivo] || ''; return { nome: d.nome || d.tipo, info: infoT[d.tipo] || 'Documento', temVer: false,
+      baixar: () => { if (url) window.open(url, '_blank', 'noopener'); else this.setState({ aviso: 'Arquivo ainda carregando. Tenta de novo em instantes.' }); },
+      zap: () => { if (url) window.open('https://wa.me/?text=' + encodeURIComponent((d.nome || 'Documento') + ': ' + url), '_blank', 'noopener'); } }; });
+    const docs = DV ? (docsReais.length ? docsReais : [{ nome: 'Documentos a caminho', info: 'Assim que o time anexar, aparecem aqui.', temVer: false, baixar: () => this.carregarViagem(), zap: () => {} }]) : [
+      { nome: 'Ordem de carregamento', info: 'Mostrar na portaria', temVer: true },
+      { nome: 'CT-e', info: 'PDF · emitido pelo time' },
+      { nome: 'MDF-e', info: 'PDF · obrigatório na viagem' },
+      { nome: 'Vale-pedágio', info: 'Comprovante' },
+      { nome: 'Carta frete', info: 'Valor e condições do frete' }
+    ].map(d => ({ ...d, temVer: !!d.temVer, baixar: dl(d.nome), zap: zp(d.nome) }));
+    const ordemCampos = [
+      { k: 'Coleta', v: via.origem }, { k: 'Entrega', v: via.destino }, { k: 'Produto', v: via.produto }, { k: 'Peso', v: via.peso },
+      { k: 'Veículo', v: via.veiculo }, { k: 'Placas', v: 'do seu cadastro' }, { k: 'Data da coleta', v: 'conforme agendado' }, { k: 'Exigência', v: 'Rastreador ligado' }
+    ];
+    const opc = on => 'border: 2px solid #62AF00; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 800; ' + (on ? 'background: #62AF00; color: #FFFFFF' : 'background: #FFFFFF; color: #3B5E12');
+    const cores = { 'Combustível': '#62AF00', 'Alimentação': '#C77700', 'Borracharia': '#3D6FB6', 'Oficina': '#6B4FA3', 'Pátio': '#4A7215', 'Hotel': '#A0457A' };
+    const P = [
+      { id: 'a', nome: 'Posto Exemplo BR-060', sigla: 'PE', cat: 'Combustível', c: [-17.80, -50.95], local: 'Rio Verde/GO', beneficio: 'R$ 0,10 a menos por litro de diesel', regra: 'Acima de 200 litros, pagando no Pix.', endereco: 'BR-060, km 380 – Rio Verde/GO', horario: 'Aberto 24h', estrutura: 'Banho, estacionamento, restaurante' },
+      { id: 'b', nome: 'Restaurante Exemplo', sigla: 'RE', cat: 'Alimentação', c: [-17.78, -50.91], local: 'Rio Verde/GO', beneficio: '10% na refeição', regra: 'Vale para o motorista, 1 vez por dia.', endereco: 'Av. Exemplo, 100 – Rio Verde/GO', horario: '10h às 22h', estrutura: 'Buffet livre, estacionamento para carreta' },
+      { id: 'c', nome: 'Pátio Exemplo', sigla: 'PT', cat: 'Pátio', c: [-17.75, -50.93], local: 'Rio Verde/GO', beneficio: 'Pernoite grátis', regra: 'Abastecendo no posto parceiro do mesmo grupo.', endereco: 'Rod. GO-174, km 5 – Rio Verde/GO', horario: 'Aberto 24h', estrutura: 'Pátio com vigia, banho' },
+      { id: 'd', nome: 'Borracharia Exemplo', sigla: 'BE', cat: 'Borracharia', c: [-17.81, -50.60], local: 'Santa Helena de Goiás/GO', beneficio: '15% na mão de obra', regra: 'Não vale para pneu novo.', endereco: 'BR-452, km 12 – Santa Helena de Goiás/GO', horario: '6h às 20h', estrutura: 'Socorro na rodovia' },
+      { id: 'e', nome: 'Oficina Diesel Exemplo', sigla: 'OD', cat: 'Oficina', c: [-17.88, -51.72], local: 'Jataí/GO', beneficio: '10% em revisão', regra: 'Agendando pelo WhatsApp da oficina.', endereco: 'Rua Exemplo, 50 – Jataí/GO', horario: '7h às 18h', estrutura: 'Freio, suspensão, elétrica' },
+      { id: 'f', nome: 'Hotel Exemplo', sigla: 'HE', cat: 'Hotel', c: [-16.68, -49.25], local: 'Goiânia/GO', beneficio: '12% na diária', regra: 'Com estacionamento para carreta.', endereco: 'Av. Exemplo, 900 – Goiânia/GO', horario: 'Recepção 24h', estrutura: 'Café da manhã, estacionamento' }
+    ];
+    const logo = c => 'width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: #FFFFFF; background: ' + (cores[c] || '#4A7215');
+    const todos = P.map(p => ({ ...p, d: km(cid, p.c) })).sort((a, b) => a.d - b.d).map(p => ({ ...p, dist: fmt(p.d), logoEstilo: logo(p.cat), abrir: () => this.setState({ tela: 'detalhe', sel: p.id }) }));
+    const parceiros = todos.filter(p => S.cat === 'Todos' || p.cat === S.cat);
+    const cats = ['Todos', 'Combustível', 'Alimentação', 'Oficina', 'Borracharia', 'Pátio', 'Pedágio', 'Hotel'].map(n => ({
+      nome: n, pick: () => this.setState({ cat: n }),
+      estilo: 'border: 0; border-radius: 999px; padding: 9px 14px; font-size: 14px; font-weight: 800; white-space: nowrap; ' + (S.cat === n ? 'background: #4A7215; color: #FFFFFF' : 'background: #FFFFFF; color: #2B2F27')
+    }));
+    const sel = todos.find(p => p.id === S.sel) || todos[0];
+    const codigo = 'MF-' + (sel.id.charCodeAt(0) * 37 % 9000 + 1000) + '-' + S.cidade.slice(0, 2).toUpperCase();
+    let seed = sel.id.charCodeAt(0) * 7919;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const fin = (r, c) => { const box = (r0, c0) => r >= r0 && r < r0 + 7 && c >= c0 && c < c0 + 7; let b = box(0, 0) ? [0, 0] : box(0, 14) ? [0, 14] : box(14, 0) ? [14, 0] : null; if (!b) return null; const y = r - b[0], x = c - b[1]; return (y === 0 || y === 6 || x === 0 || x === 6 || (y >= 2 && y <= 4 && x >= 2 && x <= 4)); };
+    const qrLinhas = [];
+    for (let r = 0; r < 21; r++) { const cel = []; for (let c = 0; c < 21; c++) { const f = fin(r, c); const on = f === null ? rnd() > 0.5 : f; cel.push({ s: 'width: 9px; height: 9px; background: ' + (on ? '#1E2419' : '#FFFFFF') }); } qrLinhas.push({ cel }); }
+    const nav = on => 'border: 0; background: transparent; padding: 10px 0 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 13px; font-weight: 800; color: ' + (on ? '#4A7215' : '#7A8172');
+    return {
+      cidade: S.cidade, trocaCidade: e => { const v = e.target.value; if (v === 'GPS') this.pedirGps(); else this.setState({ cidade: v }); },
+      filtroAberto: S.fAberto, abreFiltro: () => this.setState({ fAberto: !S.fAberto }), fechaFiltro: () => this.setState({ fAberto: false }),
+      limpaFiltro: () => this.setState({ fVeic: { Carreta: true }, fReg: '', fUf: '', fOri: '', fDes: '', fPeso: '0' }),
+      fReg: S.fReg, fUf: S.fUf, fOri: S.fOri, fDes: S.fDes, fPeso: S.fPeso,
+      mudaReg: e => this.setState({ fReg: e.target.value }), mudaUf: e => this.setState({ fUf: e.target.value }), mudaOri: e => this.setState({ fOri: e.target.value }), mudaDes: e => this.setState({ fDes: e.target.value }), mudaPeso: e => this.setState({ fPeso: e.target.value }),
+      veics: ['Truck', 'Carreta', 'Bitrem'].map(n => ({ nome: (n === 'Carreta' ? '✔ ' : '') + n + (n === 'Carreta' ? ' (seu)' : ''), pick: () => this.setState({ fVeic: { ...S.fVeic, [n]: !S.fVeic[n] } }), estilo: 'border: 2px solid #62AF00; border-radius: 999px; padding: 8px 12px; font-size: 14px; font-weight: 800; ' + (S.fVeic[n] ? 'background: #62AF00; color: #FFFFFF' : 'background: #FFFFFF; color: #3B5E12') })),
+      nFretes: fretes.length, semFrete: fretes.length === 0,
+      rotuloFiltro: 'Filtrar' + (() => { const n = [S.fReg, S.fUf, S.fOri, S.fDes, S.fPeso !== '0' ? 1 : ''].filter(Boolean).length + (Object.keys(S.fVeic).filter(k => S.fVeic[k]).join() !== 'Carreta' ? 1 : 0); return n ? ' (' + n + ')' : ''; })(),
+      chipsFiltro: ['🚛 ' + Object.keys(S.fVeic).filter(k => S.fVeic[k]).join(', ')].concat(S.fReg ? [S.fReg] : [], S.fUf ? ['Origem ' + S.fUf] : [], S.fOri ? ['De ' + S.fOri] : [], S.fDes ? ['Para ' + S.fDes] : [], S.fPeso !== '0' ? ['Até ' + S.fPeso + ' t'] : []).map(t => ({ t })),
+      temAvisoF: !!S.avisoF && S.tela === 'fretes', avisoF: S.avisoF,
+      fd,
+      telaLogin: S.tela === 'login', telaSplash: S.tela === 'splash', telaTermos: S.tela === 'termos', telaFrete: S.tela === 'frete',
+      temMenu: ['login', 'splash', 'termos', 'chat'].indexOf(S.tela) < 0, temTopo: ['login', 'splash', 'termos', 'chat'].indexOf(S.tela) < 0,
+      concordar: () => this.setState({ tela: 'login' }), verTermos: () => this.setState({ tela: 'termos' }), voltarSplash: () => this.setState({ tela: 'splash' }),
+      esqueci: () => this.setState({ avisoLogin: 'Mandamos uma senha nova no seu WhatsApp.' }), cadastrese: () => this.setState({ avisoLogin: 'Pra se cadastrar, chame a Athena no WhatsApp e mande seus documentos. Quando a transportadora liberar, seu acesso chega por lá.' }),
+      temAvisoLogin: !!S.avisoLogin, avisoLogin: S.avisoLogin,
+      termos: [
+        { h: 'O que é o Meu Frete', p: 'Um aplicativo que liga você aos fretes das transportadoras. O contrato de frete é entre você e a transportadora, que define valor, prazo e pagamento.' },
+        { h: 'Cadastro e liberação', p: 'Seu cadastro vai para todas as transportadoras do app. Cada uma analisa e aprova você na sua própria gerenciadora de risco. Você só vê fretes de quem aprovou.' },
+        { h: 'Localização durante a viagem', p: 'Do início da viagem até o envio dos comprovantes, o app usa sua localização o tempo todo, inclusive com o app fechado, para a segurança da carga, a torre de controle, a gerenciadora de risco e a seguradora. Fora da viagem, só com o app aberto, para mostrar fretes e parceiros perto de você.' },
+        { h: 'Fechamento do frete', p: 'O frete só está fechado quando a transportadora confirma o frete e o valor no app. Com uma viagem em andamento, você não pode fechar outra.' },
+        { h: 'Documentos e comprovantes', p: 'Você envia fotos das notas e comprovantes verdadeiros e legíveis. Eles podem ser conferidos pela assistente virtual e pela equipe da transportadora.' },
+        { h: 'Pagamentos e taxas', p: 'O frete e os reembolsos são pagos pela transportadora. No futuro o pagamento poderá passar pelo app, com taxa de agenciamento de até 0,5%, sempre com aviso de 30 dias e novo aceite.' },
+        { h: 'Seus dados', p: 'Compartilhamos seus dados só com transportadoras, gerenciadoras de risco, seguradoras e serviços necessários para o transporte. Parceiros não recebem seus documentos. Não vendemos dados. Você pode pedir acesso, correção ou exclusão pelo canal do encarregado de dados.' },
+        { h: 'Proibido', p: 'Usar dados de outra pessoa, compartilhar o acesso, burlar o rastreamento ou repassar o frete sem autorização. Isso pode levar à suspensão da conta.' }
+      ], entrar: () => this.entrar(),
+      semViagem: !S.viagemAtiva && !S.avaliou, temViagem: S.viagemAtiva, avaliou: S.avaliou && !S.viagemAtiva,
+      pNotas: S.passo === 2, pDocs: S.passo === 3, pViagem: S.passo === 4, pDescarga: S.passo === 5, pEntrega: S.passo === 6, pAvaliar: S.passo === 7, pDocsLista: (S.dbViagem && (S.dbDocs || []).length) ? S.passo <= 6 : (S.passo >= 3 && S.passo <= 6),
+      addNotas: e => { const fs = Array.from((e.target && e.target.files) || []); this.fNotas = (this.fNotas || []).concat(fs); this.setState({ notas: S.notas + (fs.length || 1) }); }, txtNotas: S.notas ? S.notas + ' foto(s) prontas pra enviar' : 'Nenhuma foto ainda',
+      enviaNotas: async () => { if (S.dbViagem) { if (!(this.fNotas || []).length) { this.setState({ aviso: 'Escolha as fotos das notas primeiro.' }); return; } this.setState({ aviso: 'Enviando…' }); const n = await this.subirFotos('nf', this.fNotas); this.fNotas = []; this.marcaPasso(3); this.setState({ notas: 0, aviso: n ? n + ' foto(s) enviadas pro time do manifesto ✔' : 'Não consegui enviar. Confere a internet e tenta de novo.' }); return; } this.setState({ passo: 3, aviso: S.notas ? S.notas + ' foto(s) enviadas pro manifesto' : 'Fotos enviadas pro manifesto' }); },
+      iniciar: () => { if (S.dbViagem) { this.marcaPasso(4); this.evento('iniciou'); } else this.setState({ passo: 4, aviso: '' }); }, chegou: () => { if (S.dbViagem) { this.marcaPasso(5); this.evento('chegou'); this.setState({ aviso: 'Avisamos o time do rastreio que você chegou na descarga ✔' }); } else this.setState({ passo: 5, aviso: '' }); },
+      descSim: () => this.setState({ pagou: true }), descNao: () => this.setState({ passo: 6, pagou: false, descRes: '' }), pagouDesc: S.pagou && S.descRes !== 'ok', estDescSim: 'border: 2px solid #62AF00; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 800; ' + (S.pagou ? 'background: #62AF00; color: #FFFFFF' : 'background: #FFFFFF; color: #3B5E12'),
+      vDesc: S.vDesc, mudaVDesc: e => this.setState({ vDesc: e.target.value }), addDesc: e => { this.fDesc = Array.from((e && e.target && e.target.files) || []); this.setState({ aviso: this.fDesc.length ? 'Foto do recibo pronta pra enviar' : '' }); },
+      conferirDesc: async () => { if (S.dbViagem) { if (!(this.fDesc || []).length) { this.setState({ aviso: 'Tire a foto do recibo primeiro.' }); return; } this.setState({ aviso: 'Enviando…' }); const n = await this.subirFotos('descarga', this.fDesc); this.fDesc = []; this.setState({ aviso: n ? 'Recibo enviado ✔ O time confere e te avisa. Só pague depois do OK.' : 'Não consegui enviar. Tenta de novo.' }); return; } this.setState({ descRes: S.forcaFora ? 'fora' : 'ok', forcaFora: false }); }, simForaDesc: () => this.setState({ descRes: 'fora' }),
+      descFora: S.descRes === 'fora', descOk: S.descRes === 'ok', vDescFmt: 'R$ ' + (S.vDesc || '0'), previsao, irEntrega: () => this.setState({ passo: 6 }),
+      addEnt: e => { const fs = Array.from((e.target && e.target.files) || []); this.fEnt = (this.fEnt || []).concat(fs); this.setState({ ent: S.ent + (fs.length || 1) }); }, txtEnt: S.ent ? S.ent + ' foto(s) prontas' : 'Nenhuma foto ainda', conferirEnt: async () => { if (S.dbViagem) { if (!(this.fEnt || []).length) { this.setState({ aviso: 'Tire a foto do canhoto primeiro.' }); return; } this.setState({ aviso: 'Enviando…' }); const n = await this.subirFotos('comprovante', this.fEnt); this.fEnt = []; this.setState({ ent: 0, aviso: n ? 'Comprovante enviado ✔ O time confere e finaliza a viagem.' : 'Não consegui enviar. Tenta de novo.' }); return; } this.setState({ passo: 7 }); },
+      estrelas: [1, 2, 3, 4, 5].map(estrela), enviarAval: () => this.setState({ viagemAtiva: false, avaliou: true, passo: 8 }),
+      modoFrota: S.modoFrota, naoFrota: !S.modoFrota,
+      contaMot: () => this.setState({ modoFrota: false }), contaFrota: () => this.setState({ modoFrota: true }),
+      estContaMot: 'border: 0; border-radius: 9px; padding: 10px; font-size: 14px; font-weight: 800; ' + (!S.modoFrota ? 'background: #62AF00; color: #FFFFFF' : 'background: transparent; color: #5A6152'),
+      estContaFrota: 'border: 0; border-radius: 9px; padding: 10px; font-size: 14px; font-weight: 800; ' + (S.modoFrota ? 'background: #62AF00; color: #FFFFFF' : 'background: transparent; color: #5A6152'),
+      frotaTot: { viagens: S.frota.reduce((a, m) => a + m.viagens, 0), total: 'R$ ' + Math.round(S.frota.reduce((a, m) => a + m.total, 0) / 1000) + ' mil', caminhoes: 3 },
+      frotaMot: S.frota.map(m => ({ ...m, ini: m.nome.split(' ').map(x => x[0]).join('').slice(0, 2), selId: 'cam_' + m.id, total: 'R$ ' + m.total.toLocaleString('pt-BR'),
+        status: m.emViagem ? 'Em viagem' : (m.placa ? 'Disponível · ' + m.placa : 'Sem caminhão'),
+        troca: e => this.setState({ frota: S.frota.map(x => x.id === m.id ? { ...x, placa: e.target.value } : (x.placa === e.target.value && e.target.value ? { ...x, placa: '' } : x)), avisoFrota: 'Caminhão trocado. A transportadora é avisada se tiver viagem.' }) })),
+      addMot: () => this.setState({ avisoFrota: 'Cadastro do motorista: CPF, CNH e telefone. Ele recebe o acesso no WhatsApp e passa pela análise de cada transportadora.' }),
+      addCam: () => this.setState({ avisoFrota: 'Cadastro do caminhão: CRLV, ANTT e fotos. Entra na análise junto com o motorista que for usar.' }),
+      temAvisoFrota: !!S.avisoFrota, avisoFrota: S.avisoFrota,
+      escolhaMot: S.frota.map(m => { const ok = !m.emViagem && !!m.placa, on = !!S.escolhidos[m.id]; return { nome: m.nome, sub: m.emViagem ? 'Em viagem · indisponível' : (m.placa ? 'Caminhão ' + m.placa : 'Sem caminhão · indisponível'), marca: on ? '☑' : '☐',
+        pick: () => ok && this.setState({ escolhidos: { ...S.escolhidos, [m.id]: !on } }),
+        estilo: 'display: flex; justify-content: space-between; align-items: center; text-align: left; border-radius: 12px; padding: 10px 12px; font-size: 14px; ' + (!ok ? 'border: 1px solid #E1E5DC; background: #F6F7F4; color: #9AA192' : on ? 'border: 2px solid #62AF00; background: #F4F9EC; color: #2B2F27' : 'border: 1px solid #C9D1C0; background: #FFFFFF; color: #2B2F27') }; }),
+      telaPerfil: S.tela === 'perfil', irPerfil: () => this.setState({ tela: 'perfil' }), navPerfil: nav(S.tela === 'perfil'), meuNome: S.meuNome || 'Motorista', iniciais: String(S.meuNome || 'ME').split(' ').filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase() || 'ME', sair: () => this.sair(), souSup: !!S.souSup && !S.espiando, supVazio: !(S.supLista || []).length,
+      supLista: (S.supLista || []).map(x => ({ nome: (x.motoristas && x.motoristas.nome) || 'Motorista', info: (x.origem || '') + ' → ' + (x.destino || '') + (x.placa ? ' · ' + x.placa : '') + ' · ' + ({ indo_carregar: 'indo carregar', carregando: 'carregando', em_transito: 'em trânsito', aguardando_descarga: 'na descarga', descarregado: 'descarregou' }[x.status] || x.status),
+        ver: () => { const e = { id: x.motorista_id, nome: (x.motoristas && x.motoristas.nome) || 'motorista' }; this.setState({ espiando: e, tela: 'viagem', aviso: '' }); this.carregarViagem(e); } })),
+      espiando: !!S.espiando, espNome: S.espiando ? S.espiando.nome : '',
+      espFotos: (() => { const f = S.dbFotos || [], c = t => f.filter(d => d.tipo === t).length; return 'Ele já mandou pelo app: ' + c('nf') + ' foto(s) de nota · ' + c('descarga') + ' recibo(s) de descarga · ' + c('comprovante') + ' comprovante(s). Documentos disponíveis pra ele: ' + (S.dbDocs || []).length + '.'; })(),
+      sairEspelho: () => { this.setState({ espiando: null, tela: 'perfil', aviso: '' }); this.carregarViagem(null); },
+      cadastros: [{ nome: 'Transportadora Pianetto', status: 'Liberado', selo: 'font-size: 12px; font-weight: 800; border-radius: 999px; padding: 4px 10px; background: #E6F4D7; color: #3B6B0E', detalhe: 'Seu cadastro está aprovado. Trocou de caminhão ou de carreta? Avise no chat do rastreio.', podePedir: false, pedir: () => {} }],
+      historico: (S.hist || []).map(h => ({ rota: (h.origem || '?') + ' → ' + (h.destino || '?'), data: h.criado_em ? new Date(h.criado_em).toLocaleDateString('pt-BR') : '', prod: h.produto || '', valor: h.placa || '', st: h.status === 'finalizada' ? 'Finalizada' : 'Em andamento' })),
+      nViagens: (S.hist || []).length, semHist: !(S.hist || []).length,
+      nViagensTxt: (S.hist || []).length ? (S.hist || []).length + ((S.hist || []).length === 1 ? ' viagem' : ' viagens') + ' com a gente' : 'Bem-vindo à Meu Frete',
+      temCaminhao: !!((S.hist || [])[0] || {}).placa, camPlaca: ((S.hist || [])[0] || {}).placa || '', camTipo: ((S.hist || [])[0] || {}).veiculo || '—',
+      /* 16/11/2026 (Jesimiel): ordem antes das notas + atendimento com o rastreio */
+      temOrdemDoc: !S.dbViagem || !!(S.dbDocs || []).find(d => d.tipo === 'ordem'), semOrdemDoc: !!S.dbViagem && !(S.dbDocs || []).find(d => d.tipo === 'ordem'),
+      abrirOrdem: () => { const d = (S.dbDocs || []).find(x => x.tipo === 'ordem'); if (!S.dbViagem) { this.setState({ tela: 'ordem' }); return; } const u = d && (S.dbUrls || {})[d.arquivo]; if (u) window.open(u, '_blank', 'noopener'); else this.setState({ aviso: 'Ordem ainda carregando. Tenta de novo em instantes.' }); },
+      zapOrdem: () => { const d = (S.dbDocs || []).find(x => x.tipo === 'ordem'); const u = d && (S.dbUrls || {})[d.arquivo]; if (u) window.open('https://wa.me/?text=' + encodeURIComponent('Ordem de carregamento: ' + u), '_blank', 'noopener'); else this.setState({ aviso: 'Ordem de carregamento salva no celular' }); },
+      temAtend: !!(S.atend && S.atend.status === 'aberto'), semAtend: !(S.atend && S.atend.status === 'aberto') && !S.espiando, atendMotivo: (S.atend && S.atend.motivo) || '', atendStatus: S.atend && S.atend.status === 'aberto' ? 'em atendimento' : 'finalizado',
+      irSuporte: () => this.setState({ tela: 'suporte' }), abrirChat: () => { this.setState({ tela: 'chat', avisoChat: '' }); this.carregarChat(); },
+      telaSuporte: S.tela === 'suporte', telaChat: S.tela === 'chat', gpsNegado: !!S.gpsNegado && !!S.dbViagem && !S.espiando,
+      motivos: [['📦 Avaria na carga', 'Carga danificada, molhada, faltando'], ['↩️ Devolução', 'Cliente recusou ou devolveu mercadoria'], ['🧭 Desvio ou deslocamento', 'Mudança de rota, endereço, parada fora do previsto'], ['⏱ Atraso ou problema na descarga', 'Fila, cliente não recebe, cobrança na descarga'], ['🛠 Problema no caminhão', 'Quebra, pneu, acidente'], ['💬 Outro assunto', 'Qualquer outra ajuda do rastreio']].map(([n, d]) => ({ nome: n, dica: d, pick: () => this.abrirAtend(n.replace(/^\S+\s/, '')) })),
+      chatMsgs: (S.msgs || []).map(m => { const eu = m.autor_tipo === 'motorista', sis = m.autor_tipo === 'sistema', url = m._url || (S.chatUrls || {})[m.arquivo] || '', mi = String(m.mime || ''), nm = m.nome || String(m.arquivo || '').split('/').pop();
+        const img = !!m.arquivo && /image/.test(mi), vid = !!m.arquivo && /video/.test(mi), aud = !!m.arquivo && /audio/.test(mi);
+        return { caixa: 'max-width: 82%; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 10px; box-shadow: 0 1px 1px rgba(0,0,0,0.08); ' + (sis ? 'align-self: center; background: #FFF6D6; max-width: 92%' : eu ? 'align-self: flex-end; background: #DCF8C6' : 'align-self: flex-start; background: #FFFFFF'),
+          autor: sis ? 'Meu Frete' : eu ? 'Você' : (m.autor_nome || 'Rastreio'), txt: m.texto || '', temTxt: !!m.texto, ehImg: img, ehVid: vid, ehAud: aud, ehArq: !!m.arquivo && !img && !vid && !aud, url: url, nomeArq: nm || 'arquivo',
+          hora: m.criado_em ? new Date(m.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '' }; }),
+      chatAberto: !!(S.atend && S.atend.status === 'aberto') && !S.espiando, chatFechado: !!(S.atend && S.atend.status !== 'aberto'), podeFinalizar: !!(S.atend && S.atend.status === 'aberto') && !S.espiando,
+      temAvisoChat: !!S.avisoChat && S.tela === 'chat', avisoChat: S.avisoChat || '',
+      enviarTxt: () => { const el = document.getElementById('chatTx'), t = String((el && el.value) || '').trim(); if (!t) return; el.value = ''; this.mandar(t, null); },
+      addChatArq: e => { const fs = Array.from((e.target && e.target.files) || []); fs.forEach(f => this.mandar('', f)); },
+      gravarAudio: () => this.gravar(), txtGravar: S.gravando ? '⏹ Parar e enviar' : '🎤 Áudio',
+      estGravar: 'border: 0; border-radius: 10px; padding: 10px 4px; font-size: 13px; font-weight: 800; ' + (S.gravando ? 'background: #C62828; color: #FFFFFF' : 'background: #FFFFFF; color: #2B2F27'),
+      finalizarAtend: () => this.finalizar(),
+      telaViagem: S.tela === 'viagem', telaOrdem: S.tela === 'ordem', via, etapas, docs, ordemCampos,
+      temAviso: !!S.aviso && S.tela === 'viagem', aviso: S.aviso,
+      irViagem: () => { this.setState({ tela: 'viagem', aviso: '' }); this.carregarViagem().then(() => this.carregarChat()); }, verOrdem: () => this.setState({ tela: 'ordem' }), navViagem: nav(['viagem', 'ordem', 'suporte', 'chat'].indexOf(S.tela) >= 0),
+      telaNeg: S.tela === 'neg', neg, mostraContra: S.modo === 'contra', contra: S.contra,
+      estAceito: opc(S.modo === 'aceito'), estContra: opc(S.modo === 'contra'),
+      modoAceito: () => this.setState({ modo: 'aceito' }), modoContra: () => this.setState({ modo: 'contra' }),
+      mudaContra: e => this.setState({ contra: e.target.value }),
+      enviar: async () => {
+        let vez = S.vez; try { const { data } = await window.sb.rpc('proxima_vez_embarcador'); if (data != null) vez = Number(data); } catch (e) { }
+        /* rodízio: cada proposta vai pro próximo embarcador da fila, pra ninguém ficar sem e ninguém ser favorecido */
+        const E = [{ nome: 'Marcus', tel: '556499863344' }, { nome: 'Joab', tel: '556499539866' }, { nome: 'Eduardo', tel: '556493354055' }, { nome: 'Thallysson', tel: '556493354067' }];
+        const e = E[((vez % E.length) + E.length) % E.length], contra = S.modo === 'contra' && S.contra; const esc = S.modoFrota ? S.frota.filter(m => S.escolhidos[m.id]) : [];
+        const msg = 'Olá ' + e.nome + '! Vi no app Meu Frete o frete ' + neg.origem + ' → ' + neg.destino + ' (' + neg.produto + ', ' + neg.peso + ', coleta ' + neg.coleta + ').\n' + (contra ? 'Faço por R$ ' + S.contra + '.' : 'Aceito o valor de ' + neg.valor + '.') + (esc.length ? '\nVou com ' + esc.length + ' caminhão(ões): ' + esc.map(m => m.nome + ' (' + m.placa + ')').join(', ') + '.' : '\nMeu caminhão está no cadastro do app.');
+        this.setState({ tela: 'enviado', vez: S.vez + 1, emb: { nome: e.nome, msg, link: 'https://wa.me/' + e.tel + '?text=' + encodeURIComponent(msg) },
+          enviados: { ...S.enviados, [neg.id]: (contra ? 'Proposta R$ ' + S.contra : 'Aceite') + ' enviada ao ' + e.nome } });
+      },
+      telaEnviado: S.tela === 'enviado', emb: S.emb || { nome: '', msg: '', link: '#' },
+      telaFretes: S.tela === 'fretes', telaParceiros: S.tela === 'parceiros', telaDetalhe: S.tela === 'detalhe', telaQr: S.tela === 'qr',
+      fretes, parceiros, categorias: cats, semParceiro: parceiros.length === 0, sel, codigo, qrLinhas,
+      voltar: () => this.setState({ tela: 'parceiros' }), voltarDetalhe: () => this.setState({ tela: 'detalhe' }), gerarQr: () => this.setState({ tela: 'qr' }),
+      irFretes: () => this.setState({ tela: 'fretes' }), irParceiros: () => this.setState({ tela: 'parceiros' }),
+      navFretes: nav(['fretes', 'neg', 'enviado', 'frete'].indexOf(S.tela) >= 0), navParceiros: nav(['parceiros', 'detalhe', 'qr'].indexOf(S.tela) >= 0)
+    };
+  }
+}
+window.sb = window.supabase.createClient('https://utxkdyccuuiuhsljufly.supabase.co', 'sb_publishable_HWsoBzV-wBZUdurz1_S0_Q_aYE7ahL9', { auth: { persistSession: true, autoRefreshToken: true } });
+DC.iniciar(Component);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
