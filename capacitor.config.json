@@ -1,0 +1,13 @@
+{
+  "appId": "br.com.meufretelogistica.app",
+  "appName": "Meu Frete",
+  "webDir": "www",
+  "server": {
+    "url": "https://app.meufretelogistica.com.br/",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
