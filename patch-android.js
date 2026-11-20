@@ -13,7 +13,8 @@ const perms = [
   'android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION',
   'android.permission.FOREGROUND_SERVICE', 'android.permission.FOREGROUND_SERVICE_LOCATION',
   'android.permission.POST_NOTIFICATIONS', 'android.permission.WAKE_LOCK',
-  'android.permission.RECORD_AUDIO', 'android.permission.MODIFY_AUDIO_SETTINGS'   // áudio no chat do rastreio
+  'android.permission.RECORD_AUDIO', 'android.permission.MODIFY_AUDIO_SETTINGS',   // áudio no chat do rastreio
+  'android.permission.CAMERA'   // foto da nota/canhoto
 ];
 perms.forEach(p => { if (!x.includes(p)) x = x.replace('</manifest>', `    <uses-permission android:name="${p}" />\n</manifest>`); });
 if (!x.includes('android.hardware.location.gps')) x = x.replace('</manifest>', '    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>');
